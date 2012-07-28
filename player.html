@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+          "http://www.w3.org/TR/html4/strict.dtd">
+
+<!--
+
+ Rhythmweb - a web site for your Rhythmbox.
+ Copyright (C) 2007 Michael Gratton.
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+-->
+
+<html>
+<head>
+<title>%(title)s</title>
+<link rel="stylesheet" href="site.css" type="text/css"></head>
+%(refresh)s
+<body>
+
+<div id="player">
+<h1 id="window-title">Rhythmweb</h1>
+
+<form method="post" action="/">
+<p id="toolbar">
+<button id="play" %(play)s name="action" title="Start playback" value="play"><img alt="Play" width="24" height="24" src="stock/gtk-media-play-ltr"/> Play</button>
+<!--button id="pause" name="action" title="Pause playback" value="pause"><img alt="Pause" width="24" height="24" src="stock/gtk-media-pause"/></button>
+<button id="stop" name="action" title="Stop playback" value="stop"><img alt="Stop" width="24" height="24" src="stock/gtk-media-stop"/></button -->
+<button id="previous-track" name="action" title="Play the previous track" value="prev"><img alt="Previous" width="24" height="24" src="stock/gtk-media-previous-ltr"/></button>
+<button id="next-track" name="action" title="Play the next track" value="next"><img alt="Next Track" width="24" height="24" src="stock/gtk-media-next-ltr"/></button>
+<button id="volume-up" name="action" title="Turn the volume up" value="vol-up"><img alt="Volume Up" width="24" height="24" src="stock/gtk-go-up"/></button>
+<button id="volume-down" name="action" title="Turn the volume down" value="vol-down"><img alt="Volume Down" width="24" height="24" src="stock/gtk-go-down"/></button>
+</p>
+
+<p id="playing">%(playing)s</p>
+
+<table id="playlist">
+<thead>
+  <tr>
+   <th>Title</th>
+   <th>Artist</th>
+   <th>Album</th>
+  </tr>
+</thead>
+<tbody>
+%(playlist)s
+</tbody>
+</table>
+
+</div>
+
+<div id="footer">
+<p><a href="http://web.vee.net/projects/rhythmweb/">Rhythmweb</a> - a web site for your <a href="http://www.gnome.org/projects/rhythmbox/">Rhythmbox</a>.</p>
+<p>Copyright &copy; 2007 <a href="mailto:mike@vee.net">Michael Gratton</a>.</p>
+</div>
+</body>
+</html>
