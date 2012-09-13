@@ -250,7 +250,8 @@ class RhythmwebServer(object):
 
 	    log("eviron", environ)
 	    log("response", response)
-            return return_redirect('/', environ, response)
+            response('204 No Content', [('Content-type','text/plain')])
+            return 'OK'
 
         # generate the playing headline
         title = 'Rhythmweb'
@@ -397,9 +398,9 @@ def parse_post(environ):
         length = -1
         if 'CONTENT_LENGTH' in environ:
             length = int(environ['CONTENT_LENGTH'])
-        if environ['CONTENT_TYPE'] == 'application/x-www-form-urlencoded':
+        if environ['CONTENT_TYPE'].startswith('application/x-www-form-urlencoded'):
             return cgi.parse_qs(environ['wsgi.input'].read(length))
-        if environ['CONTENT_TYPE'] == 'multipart/form-data':
+        if environ['CONTENT_TYPE'].startswith('multipart/form-data'):
             return cgi.parse_multipart(environ['wsgi.input'].read(length))
     return None
 
