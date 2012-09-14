@@ -5,7 +5,7 @@ function Rhythmweb() {
 		// TODO - reload the page via ajax entirely rather than rebuilding all html
 		
 		// reload page after 200ms, to ensure that new track has started playing
-		setTimeout(function() {document.location.href = '/';}, 200);
+		setTimeout(function() {document.location.reload();}, 200);
 	};
 	
 	var post = function(params, reload) {
