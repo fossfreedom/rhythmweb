@@ -203,36 +203,50 @@ class RhythmwebServer(object):
         queue = shell.props.queue_source
         playlist_rows = queue.props.query_model
 
+        
         # handle any action
         if environ['REQUEST_METHOD'] == 'POST':
-            params = parse_post(environ)
-            if 'action' in params:
-                action = params['action'][0]
-                if action == 'play':
-                    if not player.get_playing():
-                        if not player.get_playing_source():
-                            if playlist_rows.get_size() > 0:
-                                player.play_entry(iter(playlist_rows).next()[0],
-                                                  queue)
+            try:
+                params = parse_post(environ)
+                if 'action' in params:
+                    action = params['action'][0]
+                    if action == 'play':
+                        if not player.get_playing_entry():
+                            log("play", "not playing")
+                            if not player.get_playing_source():
+                                log("play", "not source")
+                                if playlist_rows.get_size() > 0:
+                                    log("play", "get size")
+                                    player.play_entry(iter(playlist_rows).next()[0],
+                                                    queue)
+                                    #player.play_entry(playlist_rows[0], queue)
+                            else:
+                                log("play", "play")
+                                player.play()
                         else:
-                            player.play()
-                    else:
+                            player.playpause(True)
+                            log("play", "pause")
+                    elif action == 'pause':
                         player.pause()
-                elif action == 'pause':
-                    player.pause()
-                elif action == 'next':
-                    player.do_next()
-                elif action == 'prev':
-                    player.do_previous()
-                elif action == 'stop':
-                    player.stop()
-                elif action == 'vol-up':
-                    (vol, another) = player.get_volume()
-                    player.set_volume(vol+0.1)
-                elif action == 'vol-down':
-                    (vol, another) = player.get_volume()
-                    player.set_volume(vol - 0.1)
-
+                    elif action == 'next':
+                        player.do_next()
+                    elif action == 'prev':
+                        player.do_previous()
+                    elif action == 'stop':
+                        player.stop()
+                    elif action == 'vol-up':
+                        (vol, another) = player.get_volume()
+                        player.set_volume(vol+0.1)
+                    elif action == 'vol-down':
+                        (vol, another) = player.get_volume()
+                        player.set_volume(vol - 0.1)
+                    else:
+                        log("dunno1", action)
+                else:
+                    log("dunno2","no action")
+            except:
+                pass
+                    
             log("eviron", environ)
             log("response", response)
             response('204 No Content', [('Content-type','text/plain')])
