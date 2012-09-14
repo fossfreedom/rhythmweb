@@ -212,20 +212,20 @@ class RhythmwebServer(object):
                     action = params['action'][0]
                     if action == 'play':
                         if not player.get_playing_entry():
-                            log("play", "not playing")
+                            #log("play", "not playing")
                             if not player.get_playing_source():
-                                log("play", "not source")
+                                #log("play", "not source")
                                 if playlist_rows.get_size() > 0:
-                                    log("play", "get size")
+                                    #log("play", "get size")
                                     player.play_entry(iter(playlist_rows).next()[0],
                                                     queue)
                                     #player.play_entry(playlist_rows[0], queue)
                             else:
-                                log("play", "play")
+                                #log("play", "play")
                                 player.play()
                         else:
                             player.playpause(True)
-                            log("play", "pause")
+                            #log("play", "pause")
                     elif action == 'pause':
                         player.pause()
                     elif action == 'next':
@@ -247,8 +247,8 @@ class RhythmwebServer(object):
             except:
                 pass
                     
-            log("eviron", environ)
-            log("response", response)
+            #log("eviron", environ)
+            #log("response", response)
             response('204 No Content', [('Content-type','text/plain')])
             return 'OK'
 
@@ -301,15 +301,19 @@ class RhythmwebServer(object):
             play = 'class="active"'
             duration = player.get_playing_song_duration()
             if duration > 0:
-                (refresh,another) = player.get_playing_time()
-                refresh = duration - refresh + 2 
+                try:
+                    (refresh,another) = player.get_playing_time()
+                    refresh = duration - refresh + 2 
+                except:
+                    refresh = duration + 2
+                    
                 refresh = '<meta http-equiv="refresh" content="%s">' % refresh
 
-        log('title', title)
-        log('refresh', refresh)
-        log('play', play)
-        log('playing', playing)
-        log('playlist', playlist)
+        #log('title', title)
+        #log('refresh', refresh)
+        #log('play', play)
+        #log('playing', playing)
+        #log('playlist', playlist)
 	
         # display the page
         player_html = open(resolve_path('player.html'))
@@ -416,7 +420,7 @@ def return_redirect(path, environ, response):
                         ('Location', location)]
     response(status, response_headers)
 
-    log("response", response)
+    #log("response", response)
     return [ 'Redirecting...' ]
 
 def resolve_path(path):
