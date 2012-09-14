@@ -31,11 +31,8 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
 from gi.repository import Peas
-#import gtk
-#import gobject
 
 import rb
-#import rhythmdb
 
 # try to load avahi, don't complain if it fails
 try:
@@ -128,21 +125,13 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
 
     def _update_entry(self, entry):
         if entry:
-#            artist = self.db.entry_get(entry, RB.RhythmDBPropType.ARTIST, artist_id)
-#            album = self.db.entry_get_string(entry, RB.RhythmDBPropType.ALBUM, album_id)
-#            title = self.db.entry_get_string(entry, RB.RhythmDBPropType.TITLE, title_id)
-	    artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
-	    album = entry.get_string(RB.RhythmDBPropType.ALBUM)
-	    title = entry.get_string(RB.RhythmDBPropType.TITLE)
+            artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
+            album = entry.get_string(RB.RhythmDBPropType.ALBUM)
+            title = entry.get_string(RB.RhythmDBPropType.TITLE)
             stream = None
             stream_title = \
                 self.db.entry_request_extra_metadata(entry,
                                                      'rb:stream-song-title')
-
-	    print artist
-	    print album
-	    print title
-	    print stream_title
 
             if stream_title:
                 stream = title
@@ -151,13 +140,11 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
                     artist = self.db.\
                         entry_request_extra_metadata(entry,
                                                      'rb:stream-song-artist')
-		    print artist
 
                 if not album:
                     album = self.db.\
                             entry_request_extra_metadata(entry,
                                                          'rb:stream-song-album')
-		    print album
 
             self.server.set_playing(artist, album, title, stream)
         else:
@@ -240,16 +227,14 @@ class RhythmwebServer(object):
                 elif action == 'stop':
                     player.stop()
                 elif action == 'vol-up':
-		    (vol, another) = player.get_volume()
-                    #player.set_volume(player.get_volume() + 0.1)
-		    player.set_volume(vol+0.1)
+                    (vol, another) = player.get_volume()
+                    player.set_volume(vol+0.1)
                 elif action == 'vol-down':
-		    (vol, another) = player.get_volume()
-                    #player.set_volume(player.get_volume() - 0.1)
-		    player.set_volume(vol - 0.1)
+                    (vol, another) = player.get_volume()
+                    player.set_volume(vol - 0.1)
 
-	    log("eviron", environ)
-	    log("response", response)
+            log("eviron", environ)
+            log("response", response)
             response('204 No Content', [('Content-type','text/plain')])
             return 'OK'
 
@@ -282,20 +267,18 @@ class RhythmwebServer(object):
         # generate the playlist
         playlist = '<tr><td colspan="3">Playlist is empty</td></tr>'
         if playlist_rows.get_size() > 0:
-            playlist = cStringIO.StringIO()
+            outputstr = cStringIO.StringIO()
             for row in playlist_rows:
                 entry = row[0]
-                playlist.write('<tr><td>')
-#                playlist.write(db.entry_get(entry, RB.RhythmDBPropType.TITLE, title))
-		playlist.write(entry.get_string(RB.RhythmDBPropType.TITLE))
-                playlist.write('</td><td>')
-#                playlist.write(db.entry_get(entry, RB.RhythmDBPropType.ARTIST, artist))
-		playlist.write(entry.get_string(RB.RhythmDBPropType.ARTIST))
-                playlist.write('</td><td>')
-#                playlist.write(db.entry_get(entry, RB.RhythmDBPropType.ALBUM, album))
-		playlist.write(entry.get_string(RB.RhythmDBPropType.ALBUM))
-                playlist.write('</td></tr>')
-            playlist = playlist.getvalue()
+                outputstr.write('<tr><td>')
+                outputstr.write(entry.get_string(RB.RhythmDBPropType.TITLE))
+                outputstr.write('</td><td>')
+                outputstr.write(entry.get_string(RB.RhythmDBPropType.ARTIST))
+                outputstr.write('</td><td>')
+                outputstr.write(entry.get_string(RB.RhythmDBPropType.ALBUM))
+                outputstr.write('</td></tr>')
+            playlist = outputstr.getvalue()
+            outputstr.close()
 
         # handle player state
         play = ''
@@ -304,18 +287,15 @@ class RhythmwebServer(object):
             play = 'class="active"'
             duration = player.get_playing_song_duration()
             if duration > 0:
-		print player.get_playing_time()
-		print duration
-#                refresh = duration - player.get_playing_time() + 2
-		(refresh,another) = player.get_playing_time()
-		refresh = duration - refresh + 2 
+                (refresh,another) = player.get_playing_time()
+                refresh = duration - refresh + 2 
                 refresh = '<meta http-equiv="refresh" content="%s">' % refresh
 
-	log('title', title)
-	log('refresh', refresh)
-	log('play', play)
-	log('playing', playing)
-	log('playlist', playlist)
+        log('title', title)
+        log('refresh', refresh)
+        log('play', play)
+        log('playing', playing)
+        log('playlist', playlist)
 	
         # display the page
         player_html = open(resolve_path('player.html'))
@@ -364,10 +344,6 @@ class RhythmwebServer(object):
             path = path[1:]
 
         path = resolve_path(path)
-
-        # this seems to cause a segfault
-        #f = self.plugin.find_file(path)
-        #print str(f)
 
         if os.path.isfile(path):
             lastmod = time.gmtime(os.path.getmtime(path))
