@@ -15,3 +15,8 @@ Issues
 ======
 
 1. Play button doesnt currently play the song - issue #4
+
+Thanks
+======
+
+1. thank-you to dinoboy197 for fixing the HTML response issues.
