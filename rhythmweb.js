@@ -1,5 +1,7 @@
 function Rhythmweb() {
 	
+	var toggleShuffleEl;
+	
 	var reloadWindow = function(data) {
 		// some data has changed on the page
 		// TODO - reload the page via ajax entirely rather than rebuilding all html
@@ -32,12 +34,22 @@ function Rhythmweb() {
 		post({'action':'vol-down'});
 	};
 	
+	var toggleShuffle = function() {
+		post({'action':'toggle-shuffle'});
+		
+		// change active flag
+		toggleShuffleEl.toggleClass('active');
+	};
+	
 	var initialize = function() {
+		toggleShuffleEl = $('#toggle-shuffle');
+		
 		$('#play').click(play);
 		$('#previous-track').click(previousTrack);
 		$('#next-track').click(nextTrack);
 		$('#volume-up').click(volumeUp);
 		$('#volume-down').click(volumeDown);
+		toggleShuffleEl.click(toggleShuffle);
 	};
 
 	initialize();
