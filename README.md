@@ -14,7 +14,4 @@ How to use:
 Issues
 ======
 
-it appears the HTML generated in the web-response does not meet
-current web-standards and generates an invalid reply.
-
-Feel free to examine the code, the HTML generated and fix.
+1. Play button doesnt currently play the song - issue #4
