@@ -341,10 +341,19 @@ class RhythmwebServer(object):
 
         if iconinfo:
             filename = iconinfo.get_filename()
+            file_extension = os.path.splitext(filename)[1]
+            
+            # assume png file type
+            content_type = 'image/png'
+            
+            # check for svg image
+            if file_extension == '.svg':
+                content_type = 'image/svg+xml'
+            
             icon = open(filename)
             lastmod = time.gmtime(os.path.getmtime(filename))
             lastmod = time.strftime("%a, %d %b %Y %H:%M:%S +0000", lastmod)
-            response_headers = [('Content-type','image/png'),
+            response_headers = [('Content-type',content_type),
                                 ('Last-Modified', lastmod)]
             response('200 OK', response_headers)
             return icon
