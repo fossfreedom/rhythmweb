@@ -31,6 +31,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
 from gi.repository import Peas
+import gio
 
 import rb
 
@@ -341,14 +342,9 @@ class RhythmwebServer(object):
 
         if iconinfo:
             filename = iconinfo.get_filename()
-            file_extension = os.path.splitext(filename)[1]
             
-            # assume png file type
-            content_type = 'image/png'
-            
-            # check for svg image
-            if file_extension == '.svg':
-                content_type = 'image/svg+xml'
+            # use gio to guess at the content type based on filename
+            content_type = gio.content_type_guess(filename)
             
             icon = open(filename)
             lastmod = time.gmtime(os.path.getmtime(filename))
