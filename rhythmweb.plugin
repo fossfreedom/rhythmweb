@@ -3,6 +3,7 @@ Loader=python
 Module=rhythmweb
 IAge=2
 Name=Rhythmweb
+Depends=rb
 Description=A web interface for Rhythmbox
 Authors=fossfreedom <foss.freedom@gmail.com> orig. Michael Gratton <mike@vee.net>
 Copyright=Copyright © 2012 fossfreedom
