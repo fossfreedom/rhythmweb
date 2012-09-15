@@ -21,10 +21,10 @@ cd rhythmweb
 
 3. Launch your browser and browse to localhost:8000
 
-![Imgur](http://i.imgur.com/EP3il.png)
+![Imgur](http://i.imgur.com/2GiNZ.png)
 
 
 Thanks
 ======
 
-1. thank-you to dinoboy197 for fixing the HTML response issues.
+1. thank-you to dinoboy197 for various fix-ups and adding toggle-buttons 
