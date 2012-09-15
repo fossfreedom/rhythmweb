@@ -235,22 +235,10 @@ class RhythmwebServer(object):
                         player.do_previous()
                     elif action == 'stop':
                         player.stop()
+                    elif action == 'toggle-repeat':
+                        self._toggle_play_order(player, False)
                     elif action == 'toggle-shuffle':
-                        # get current shuffle state
-                        current_shuffle = player.props.play_order
-                    
-                        # determine which next shuffle shall be
-                        if current_shuffle == 'linear':
-                            current_shuffle = 'shuffle'
-                        elif current_shuffle == 'shuffle':
-                            current_shuffle = 'linear'
-                        elif current_shuffle == 'linear-loop':
-                            current_shuffle = 'random-by-age-and-rating'
-                        else:
-                            current_shuffle = 'linear-loop'
-                    
-                        # set shuffle state
-                        Gio.Settings.new('org.gnome.rhythmbox.player').set_string("play-order",current_shuffle)
+                        self._toggle_play_order(player, True)
                     elif action == 'vol-up':
                         (vol, another) = player.get_volume()
                         player.set_volume(vol+0.1)
@@ -332,9 +320,12 @@ class RhythmwebServer(object):
         #log('playing', playing)
         #log('playlist', playlist)
         
-        toggle_active = ''
+        toggle_repeat_active = ''
+        toggle_shuffle_active = ''
+        if (player.props.play_order == 'linear-loop') or (player.props.play_order == 'random-by-age-and-rating'):
+            toggle_repeat_active = 'class="active"'
         if (player.props.play_order == 'shuffle') or (player.props.play_order == 'random-by-age-and-rating'):
-            toggle_active = 'class="active"'
+            toggle_shuffle_active = 'class="active"'
 	
         # display the page
         player_html = open(resolve_path('player.html'))
@@ -345,7 +336,25 @@ class RhythmwebServer(object):
                                       'play': play,
                                       'playing': playing,
                                       'playlist': playlist,
-                                      'toggle_active': toggle_active }
+                                      'toggle_repeat_active': toggle_repeat_active,
+                                      'toggle_shuffle_active': toggle_shuffle_active }
+                                      
+    def _toggle_play_order(self, player, toggle_shuffle):
+        # get current play order
+        current_play_order = player.props.play_order
+        
+        # determine which next shuffle shall be
+        if current_play_order == 'linear':
+            current_play_order = 'shuffle' if toggle_shuffle == True else 'linear-loop'
+        elif current_play_order == 'shuffle':
+            current_play_order = 'linear' if toggle_shuffle == True else 'random-by-age-and-rating'
+        elif current_play_order == 'linear-loop':
+            current_play_order = 'random-by-age-and-rating' if toggle_shuffle == True else 'linear'
+        else:
+            current_play_order = 'linear-loop' if toggle_shuffle == True else 'shuffle'
+        
+        # set play order state
+        Gio.Settings.new('org.gnome.rhythmbox.player').set_string("play-order",current_play_order)
 
     def _handle_stock(self, environ, response):
         path = environ['PATH_INFO']
