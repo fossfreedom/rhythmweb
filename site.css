@@ -57,6 +57,7 @@ html, body {
 #stop,
 #previous-track,
 #next-track,
+#toggle-repeat,
 #toggle-shuffle {
   float: left;
 }

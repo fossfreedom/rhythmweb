@@ -1,6 +1,7 @@
 function Rhythmweb() {
 	
 	var toggleShuffleEl;
+	var toggleRepeatEl;
 	
 	var reloadWindow = function(data) {
 		// some data has changed on the page
@@ -41,8 +42,16 @@ function Rhythmweb() {
 		toggleShuffleEl.toggleClass('active');
 	};
 	
+	var toggleRepeat = function() {
+		post({'action':'toggle-repeat'});
+		
+		// change active flag
+		toggleRepeatEl.toggleClass('active');
+	};
+	
 	var initialize = function() {
 		toggleShuffleEl = $('#toggle-shuffle');
+		toggleRepeatEl = $('#toggle-repeat');
 		
 		$('#play').click(play);
 		$('#previous-track').click(previousTrack);
@@ -50,6 +59,7 @@ function Rhythmweb() {
 		$('#volume-up').click(volumeUp);
 		$('#volume-down').click(volumeDown);
 		toggleShuffleEl.click(toggleShuffle);
+		toggleRepeatEl.click(toggleRepeat);
 	};
 
 	initialize();
