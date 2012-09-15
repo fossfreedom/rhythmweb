@@ -32,7 +32,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
 from gi.repository import Peas
-import gio
+#import gio
 
 import rb
 
@@ -372,19 +372,21 @@ class RhythmwebServer(object):
             iconinfo = icons.lookup_icon(stock_id, 16, 0)
 
         if iconinfo:
-            filename = iconinfo.get_filename()
-            
+            fname = iconinfo.get_filename()
+            boolval = False
             # use gio to guess at the content type based on filename
-            content_type = gio.content_type_guess(filename)
             
-            icon = open(filename)
-            lastmod = time.gmtime(os.path.getmtime(filename))
+            content_type, val = Gio.content_type_guess(filename=fname, data=None)
+
+            icon = open(fname)
+            lastmod = time.gmtime(os.path.getmtime(fname))
             lastmod = time.strftime("%a, %d %b %Y %H:%M:%S +0000", lastmod)
             response_headers = [('Content-type',content_type),
                                 ('Last-Modified', lastmod)]
             response('200 OK', response_headers)
             return icon
         else:
+            log("icon", "none")
             response_headers = [('Content-type','text/plain')]
             response('404 Not Found', response_headers)
             return 'Stock not found: %s' % stock_id
