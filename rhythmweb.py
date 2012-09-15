@@ -32,6 +32,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
 from gi.repository import Peas
+import gio
 
 import rb
 
@@ -372,10 +373,14 @@ class RhythmwebServer(object):
 
         if iconinfo:
             filename = iconinfo.get_filename()
+            
+            # use gio to guess at the content type based on filename
+            content_type = gio.content_type_guess(filename)
+            
             icon = open(filename)
             lastmod = time.gmtime(os.path.getmtime(filename))
             lastmod = time.strftime("%a, %d %b %Y %H:%M:%S +0000", lastmod)
-            response_headers = [('Content-type','image/png'),
+            response_headers = [('Content-type',content_type),
                                 ('Last-Modified', lastmod)]
             response('200 OK', response_headers)
             return icon
