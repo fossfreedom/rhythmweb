@@ -27,6 +27,7 @@ import socket
 from wsgiref.simple_server import WSGIRequestHandler
 from wsgiref.simple_server import make_server
 
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
@@ -234,6 +235,22 @@ class RhythmwebServer(object):
                         player.do_previous()
                     elif action == 'stop':
                         player.stop()
+                    elif action == 'toggle-shuffle':
+                        # get current shuffle state
+                        current_shuffle = player.props.play_order
+                    
+                        # determine which next shuffle shall be
+                        if current_shuffle == 'linear':
+                            current_shuffle = 'shuffle'
+                        elif current_shuffle == 'shuffle':
+                            current_shuffle = 'linear'
+                        elif current_shuffle == 'linear-loop':
+                            current_shuffle = 'random-by-age-and-rating'
+                        else:
+                            current_shuffle = 'linear-loop'
+                    
+                        # set shuffle state
+                        Gio.Settings.new('org.gnome.rhythmbox.player').set_string("play-order",current_shuffle)
                     elif action == 'vol-up':
                         (vol, another) = player.get_volume()
                         player.set_volume(vol+0.1)
@@ -314,6 +331,10 @@ class RhythmwebServer(object):
         #log('play', play)
         #log('playing', playing)
         #log('playlist', playlist)
+        
+        toggle_active = ''
+        if (player.props.play_order == 'shuffle') or (player.props.play_order == 'random-by-age-and-rating'):
+            toggle_active = 'class="active"'
 	
         # display the page
         player_html = open(resolve_path('player.html'))
@@ -323,7 +344,8 @@ class RhythmwebServer(object):
                                       'refresh': refresh,
                                       'play': play,
                                       'playing': playing,
-                                      'playlist': playlist }
+                                      'playlist': playlist,
+                                      'toggle_active': toggle_active }
 
     def _handle_stock(self, environ, response):
         path = environ['PATH_INFO']
