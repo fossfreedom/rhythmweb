@@ -127,6 +127,7 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
 
     def _update_entry(self, entry):
         if entry:
+            uri = entry.get_string(RB.RhythmDBPropType.LOCATION)
             artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
             album = entry.get_string(RB.RhythmDBPropType.ALBUM)
             title = entry.get_string(RB.RhythmDBPropType.TITLE)
@@ -148,9 +149,9 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
                             entry_request_extra_metadata(entry,
                                                          'rb:stream-song-album')
 
-            self.server.set_playing(artist, album, title, stream)
+            self.server.set_playing(artist, album, title, stream, uri)
         else:
-            self.server.set_playing(None, None, None, None)
+            self.server.set_playing(None, None, None, None, None)
 
 
 class RhythmwebServer(object):
@@ -173,11 +174,12 @@ class RhythmwebServer(object):
         self.running = False
         self.plugin = None
 
-    def set_playing(self, artist, album, title, stream):
+    def set_playing(self, artist, album, title, stream, uri):
         self.artist = artist
         self.album = album
         self.title = title
         self.stream = stream
+        self.uri = uri
 
     def _open(self, filename):
         filename = os.path.join(os.path.dirname(__file__), filename)
@@ -203,8 +205,16 @@ class RhythmwebServer(object):
         shell = self.plugin.shell
         db = self.plugin.db
         queue = shell.props.queue_source
-        playlist_rows = queue.props.query_model
-
+        
+        playlist_rows = []
+        
+        if player.get_playing_source() is not None:
+            # something is playing; get the track list from the play queue or the current playlists
+            playlist_rows = player.get_playing_source().get_entry_view().props.model
+        else:
+            # nothing is playing,
+            # but there are some songs in the play queue; the track listing should show the play queue
+            playlist_rows = queue.props.query_model
         
         # handle any action
         if environ['REQUEST_METHOD'] == 'POST':
@@ -228,6 +238,10 @@ class RhythmwebServer(object):
                         else:
                             player.playpause(True)
                             #log("play", "pause")
+                    elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
+                        # user wants to play a specific song in the play list
+                        track = params['track'][0]
+                        self._play_track(player, shell, track)
                     elif action == 'pause':
                         player.pause()
                     elif action == 'next':
@@ -290,7 +304,12 @@ class RhythmwebServer(object):
             outputstr = cStringIO.StringIO()
             for row in playlist_rows:
                 entry = row[0]
-                outputstr.write('<tr><td>')
+                outputstr.write('<tr id="')
+                outputstr.write(entry.get_string(RB.RhythmDBPropType.LOCATION))
+                outputstr.write('"')
+                if self.uri == entry.get_string(RB.RhythmDBPropType.LOCATION):
+                    outputstr.write(' class="selected"')
+                outputstr.write('><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.TITLE))
                 outputstr.write('</td><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.ARTIST))
@@ -339,7 +358,22 @@ class RhythmwebServer(object):
                                       'playlist': playlist,
                                       'toggle_repeat_active': toggle_repeat_active,
                                       'toggle_shuffle_active': toggle_shuffle_active }
-                                      
+                              
+    def _play_track(self, player, shell, track):
+    	source = ''
+    	
+    	# find the current playing source, or select the active queue source
+        if player.get_playing_source() is not None:
+        	source = player.get_playing_source()
+        else:
+            source = shell.props.queue_source
+        
+        # find the rhythmbox database entry for the track uri
+        entry = shell.props.db.entry_lookup_by_location(track)
+        
+        # play the track on the source
+        player.play_entry(entry, source)
+            
     def _toggle_play_order(self, player, toggle_shuffle):
         # get current play order
         current_play_order = player.props.play_order

@@ -75,6 +75,18 @@ html, body {
   width: 100%;
 }
 
+#playlist tr.alt td {
+	background: #ecf6fc;
+}
+
+#playlist tr.over td {
+	background: #bcd4ec;
+}
+
+#playlist tr.selected td {
+	background: ButtonFace;
+}
+
 #footer {
   margin-top: 24px;
 }
@@ -111,7 +123,7 @@ table thead th:first-child {
 table tbody td {
   padding: 4px;
   color: ButtonText;
-  background: ButtonFace;
+  background: white;
 }
 
 img { 
