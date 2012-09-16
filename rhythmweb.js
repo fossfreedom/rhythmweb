@@ -51,11 +51,26 @@ function Rhythmweb() {
 	
 	var addTrackTableClickHandlers = function() {
 		// add click handlers to all table elements, current and future
+		$('#playlist tr').live('click', handleTrackClicked);
 		$('#playlist tr').live('dblclick', handleTrackDoubleClicked);
+	};
+	
+	var handleTrackClicked = function(event) {
+		var tr = $(event.currentTarget);
+		
+		// remove previous selection
+		$('#playlist tr').removeClass('selected');
+		
+		// select the track row
+		tr.addClass('selected');
 	};
 	
 	var handleTrackDoubleClicked = function(event) {
 		post({'action':'play-track','track':event.currentTarget.id}, true);
+	};
+	
+	var alternateTrackTableRowColors = function() {
+		$('#playlist tr:even').addClass('alt');
 	};
 	
 	var initialize = function() {
@@ -71,6 +86,8 @@ function Rhythmweb() {
 		toggleRepeatEl.click(toggleRepeat);
 		
 		addTrackTableClickHandlers();
+		
+		alternateTrackTableRowColors();
 	};
 
 	initialize();

@@ -127,6 +127,7 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
 
     def _update_entry(self, entry):
         if entry:
+            uri = entry.get_string(RB.RhythmDBPropType.LOCATION)
             artist = entry.get_string(RB.RhythmDBPropType.ARTIST)
             album = entry.get_string(RB.RhythmDBPropType.ALBUM)
             title = entry.get_string(RB.RhythmDBPropType.TITLE)
@@ -148,9 +149,9 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
                             entry_request_extra_metadata(entry,
                                                          'rb:stream-song-album')
 
-            self.server.set_playing(artist, album, title, stream)
+            self.server.set_playing(artist, album, title, stream, uri)
         else:
-            self.server.set_playing(None, None, None, None)
+            self.server.set_playing(None, None, None, None, None)
 
 
 class RhythmwebServer(object):
@@ -173,11 +174,12 @@ class RhythmwebServer(object):
         self.running = False
         self.plugin = None
 
-    def set_playing(self, artist, album, title, stream):
+    def set_playing(self, artist, album, title, stream, uri):
         self.artist = artist
         self.album = album
         self.title = title
         self.stream = stream
+        self.uri = uri
 
     def _open(self, filename):
         filename = os.path.join(os.path.dirname(__file__), filename)
@@ -304,7 +306,10 @@ class RhythmwebServer(object):
                 entry = row[0]
                 outputstr.write('<tr id="')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.LOCATION))
-                outputstr.write('"><td>')
+                outputstr.write('"')
+                if self.uri == entry.get_string(RB.RhythmDBPropType.LOCATION):
+                    outputstr.write(' class="selected"')
+                outputstr.write('><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.TITLE))
                 outputstr.write('</td><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.ARTIST))
