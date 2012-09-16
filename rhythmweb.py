@@ -307,8 +307,12 @@ class RhythmwebServer(object):
                 outputstr.write('<tr id="')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.LOCATION))
                 outputstr.write('"')
-                if self.uri == entry.get_string(RB.RhythmDBPropType.LOCATION):
-                    outputstr.write(' class="selected"')
+                try:
+                    if self.uri == entry.get_string(RB.RhythmDBPropType.LOCATION):
+                        outputstr.write(' class="selected"')
+                except:
+                    pass
+                    
                 outputstr.write('><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.TITLE))
                 outputstr.write('</td><td>')
@@ -457,7 +461,6 @@ class LoggingWSGIRequestHandler(WSGIRequestHandler):
                          (self.address_string(),
                           self.log_date_time_string(),
                           format%args))
-
 
 def parse_post(environ):
     if 'CONTENT_TYPE' in environ:
