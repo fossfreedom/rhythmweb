@@ -49,6 +49,15 @@ function Rhythmweb() {
 		toggleRepeatEl.toggleClass('active');
 	};
 	
+	var addTrackTableClickHandlers = function() {
+		// add click handlers to all table elements, current and future
+		$('#playlist tr').live('dblclick', handleTrackDoubleClicked);
+	};
+	
+	var handleTrackDoubleClicked = function(event) {
+		post({'action':'play-track','track':event.currentTarget.id}, true);
+	};
+	
 	var initialize = function() {
 		toggleShuffleEl = $('#toggle-shuffle');
 		toggleRepeatEl = $('#toggle-repeat');
@@ -60,6 +69,8 @@ function Rhythmweb() {
 		$('#volume-down').click(volumeDown);
 		toggleShuffleEl.click(toggleShuffle);
 		toggleRepeatEl.click(toggleRepeat);
+		
+		addTrackTableClickHandlers();
 	};
 
 	initialize();

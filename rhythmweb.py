@@ -236,6 +236,10 @@ class RhythmwebServer(object):
                         else:
                             player.playpause(True)
                             #log("play", "pause")
+                    elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
+                        # user wants to play a specific song in the play list
+                        track = params['track'][0]
+                        self._play_track(player, shell, track)
                     elif action == 'pause':
                         player.pause()
                     elif action == 'next':
@@ -298,7 +302,9 @@ class RhythmwebServer(object):
             outputstr = cStringIO.StringIO()
             for row in playlist_rows:
                 entry = row[0]
-                outputstr.write('<tr><td>')
+                outputstr.write('<tr id="')
+                outputstr.write(entry.get_string(RB.RhythmDBPropType.LOCATION))
+                outputstr.write('"><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.TITLE))
                 outputstr.write('</td><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.ARTIST))
@@ -347,7 +353,22 @@ class RhythmwebServer(object):
                                       'playlist': playlist,
                                       'toggle_repeat_active': toggle_repeat_active,
                                       'toggle_shuffle_active': toggle_shuffle_active }
-                                      
+                              
+    def _play_track(self, player, shell, track):
+    	source = ''
+    	
+    	# find the current playing source, or select the active queue source
+        if player.get_playing_source() is not None:
+        	source = player.get_playing_source()
+        else:
+            source = shell.props.queue_source
+        
+        # find the rhythmbox database entry for the track uri
+        entry = shell.props.db.entry_lookup_by_location(track)
+        
+        # play the track on the source
+        player.play_entry(entry, source)
+            
     def _toggle_play_order(self, player, toggle_shuffle):
         # get current play order
         current_play_order = player.props.play_order
