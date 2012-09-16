@@ -203,8 +203,16 @@ class RhythmwebServer(object):
         shell = self.plugin.shell
         db = self.plugin.db
         queue = shell.props.queue_source
-        playlist_rows = queue.props.query_model
-
+        
+        playlist_rows = []
+        
+        if player.get_playing_source() is not None:
+            # something is playing; get the track list from the play queue or the current playlists
+            playlist_rows = player.get_playing_source().get_entry_view().props.model
+        else:
+            # nothing is playing,
+            # but there are some songs in the play queue; the track listing should show the play queue
+            playlist_rows = queue.props.query_model
         
         # handle any action
         if environ['REQUEST_METHOD'] == 'POST':
