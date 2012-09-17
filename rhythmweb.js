@@ -51,8 +51,23 @@ function Rhythmweb() {
 	
 	var addTrackTableClickHandlers = function() {
 		// add click handlers to all table elements, current and future
-		$('#playlist tr').live('click', handleTrackClicked);
-		$('#playlist tr').live('dblclick', handleTrackDoubleClicked);
+		var agent = navigator.userAgent.toLowerCase();
+		if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0){
+			// register double tap handler, but don't use the single tap handler as it's broken
+			$('#playlist tr').doubletap(
+			    handleTrackDoubleClicked,
+			    null,
+			    300
+			);
+			
+			// install single tap handler
+			$('#playlist tr').live('touchend', handleTrackClicked);
+		}
+		else {
+			// non mobile safari - use standard jquery click handlers
+			$('#playlist tr').live('click', handleTrackClicked);
+			$('#playlist tr').live('dblclick', handleTrackDoubleClicked);
+		}
 	};
 	
 	var handleTrackClicked = function(event) {
