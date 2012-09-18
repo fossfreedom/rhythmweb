@@ -26,13 +26,13 @@ cd rhythmweb
 Tested Platforms
 ----------------
 
-Ipod/IPad / Safari
-Mac OS X 10.7.4 / Safari 6.0
-Mac OS X 10.7.4 / Firefox 14.0.1
-Mac OS X 10.7.4 / Chrome 21.0
-Win XP SP3 / Firefox 6.0
-Win XP SP3 / IE 8.0
-Win XP SP3 / Chrome 21.0: Pass
+ - Ipod/IPad / Safari
+ - Mac OS X 10.7.4 / Safari 6.0
+ - Mac OS X 10.7.4 / Firefox 14.0.1
+ - Mac OS X 10.7.4 / Chrome 21.0
+ - Win XP SP3 / Firefox 6.0
+ - Win XP SP3 / IE 8.0
+ - Win XP SP3 / Chrome 21.0: Pass
 
 Thanks
 ======
