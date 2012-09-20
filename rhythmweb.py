@@ -47,7 +47,7 @@ except:
 
 class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'RhythmwebPlugin'
-    object = GObject.Property(type=GObject.GObject)
+    object = GObject.property(type=GObject.GObject)
 
     def __init__(self):
         super(RhythmwebPlugin, self).__init__()
