@@ -3,6 +3,9 @@ rhythmweb
 
 GTK3 port of the original rhythmweb v0.1x GTK2 plugin - for Rhythmbox v2.96 and above
 
+Original implementation by Michael Gratton <mike@vee.net>
+Enhancements by fossfreedom and Taylor Raack <taylor@raack.info>
+
 How to use:
 
 1. Extract the folder and its contents to ~/.local/share/rhythmbox/plugins
