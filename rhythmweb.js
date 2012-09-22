@@ -1,7 +1,7 @@
 /*
  Rhythmweb - a web site for your Rhythmbox.
  GTK3 port to work with v2.96 Rhythmbox
- Copyright (c) 2012 fossfreedom and Taylor Raack <taylor@raack.info>
+ Copyright (c) 2012 fossfreedom and Taylor Raack
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
