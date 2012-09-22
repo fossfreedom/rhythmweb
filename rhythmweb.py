@@ -255,11 +255,11 @@ class RhythmwebServer(object):
                     elif action == 'toggle-shuffle':
                         self._toggle_play_order(player, True)
                     elif action == 'vol-up':
-                        (vol, another) = player.get_volume()
-                        player.set_volume(vol+0.1)
+                        (dummy, vol) = player.get_volume()
+                        player.set_volume(vol + 0.05)
                     elif action == 'vol-down':
-                        (vol, another) = player.get_volume()
-                        player.set_volume(vol - 0.1)
+                        (dummy, vol) = player.get_volume()
+                        player.set_volume(vol - 0.05)
                     else:
                         log("dunno1", action)
                 else:
