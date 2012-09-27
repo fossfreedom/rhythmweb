@@ -59,8 +59,13 @@ html, body {
 #previous-track,
 #next-track,
 #toggle-repeat,
-#toggle-shuffle {
+#toggle-shuffle,
+#toggle-playlist-view {
   float: left;
+}
+
+#toggle-playlist-view {
+  margin-top: 8px;
 }
 
 #playing {
@@ -98,8 +103,11 @@ html, body {
   font-size: 0.8em;
 }
 
-table {
+#main {
   margin-top: 8px;
+}
+
+table {
   border-collapse: separate;
   border-spacing: 0px;
   padding: 1px;
@@ -170,6 +178,38 @@ cite {
   font-weight: normal;
   font-style: normal;
   font-variant: normal;
+}
+
+#trackbox,#playlistbox {
+    border: 1px solid;
+}
+ 
+#playlistbox {
+    background-color: #FFF;
+    border-color: #BCD;
+    display: none;
+}
+
+#playlistbox .selected {
+  background: ButtonFace;
+}
+
+#trackbox {
+    background-color: #EFE;
+    border-color: #CDC;
+}
+ 
+.use-sidebar #trackbox {width: 79%;}
+.use-sidebar #playlistbox {
+    display: block;
+    width: 20%;
+}
+ 
+.use-sidebar.sidebar-at-left #trackbox, .use-sidebar.sidebar-at-right #playlistbox {float: right;}
+.use-sidebar.sidebar-at-right #trackbox, .use-sidebar.sidebar-at-left #playlistbox {float: left;}
+
+.clearer {
+    clear: both;
 }
 
 
