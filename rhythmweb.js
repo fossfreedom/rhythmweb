@@ -24,6 +24,7 @@ function Rhythmweb() {
 	var playlistBoxEl;
 	
 	var selectedPlaylist = '';
+	var selectedTrack = '';
 	
 	var reloadWindow = function(data) {
 		// some data has changed on the page
@@ -38,7 +39,11 @@ function Rhythmweb() {
 	};
 	
 	var play = function() {
-		post({'action':'play'}, true);
+		var params = {'action':'play', 'playlist': selectedPlaylist};
+		if(selectedTrack != '') {
+			params['track'] = selectedTrack;
+		}
+		post(params, true);
 	};
 	
 	var previousTrack = function() {
@@ -71,6 +76,11 @@ function Rhythmweb() {
 		toggleRepeatEl.toggleClass('active');
 	};
 	
+	var loadPlayQueue = function() {
+	    // ajax load of play queue
+        $.get('/playqueue',loadPlaylistData);
+	};
+	
 	var loadPlaylist = function(playlistName) {
 	    // ajax load of playlist
         $.get('/playlist/' + playlistName,loadPlaylistData);
@@ -92,6 +102,8 @@ function Rhythmweb() {
 	    
 	    // set color alternation
 	    alternateTrackTableRowColors();
+	    
+	    selectedPlaylist = playlistData['name'];
 	};
 	
 	var installClickHandlers = function(elementLocator, clickFunction, doubleClickFunction) {
@@ -136,19 +148,29 @@ function Rhythmweb() {
 		
 		// select the track row
 		tr.addClass('selected');
+		
+		selectedTrack = event.currentTarget.id;
 	};
 	
 	var handlePlaylistClicked = function(event) {
         var div = $(event.currentTarget);
         
         // load the playlist into the window
-        loadPlaylist(div.html());
+        if(div.hasClass("playqueue")) {
+        	// this is the global play queue
+        	loadPlayQueue();
+        } else {
+        	loadPlaylist(div.html());
+        }
         
         // remove previous selection
         $('#playlistbox .playlist_item').removeClass('selected');
         
         // select the track row
         div.addClass('selected');
+        
+        // clear the selected track
+        selectedTrack = '';
     };
 	
 	var handleTrackDoubleClicked = function(event) {
@@ -192,6 +214,16 @@ function Rhythmweb() {
 	var displayPlaylists = function(playlistData) {
 	   // display the new playlists
 	   var playlistHTMLs = [];
+	   
+	   // add play queue
+	   var playQueueEl = '<div class="playlist_item playqueue';
+	   if(playlistData['selected'] == 'Play Queue') {
+		   playQueueEl += ' selected';
+	   }
+	   playQueueEl += '"	>Play Queue</div>';
+	   
+	   
+	   playlistHTMLs.push(playQueueEl);
 	   
 	   for(var i in playlistData['playlists']) {
 	       var div = '<div class="playlist_item';
