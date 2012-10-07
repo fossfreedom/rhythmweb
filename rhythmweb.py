@@ -20,7 +20,9 @@
 
 import cStringIO
 import cgi
+import json
 import os
+import re
 import sys
 import time
 import socket
@@ -195,6 +197,12 @@ class RhythmwebServer(object):
         path = environ['PATH_INFO']
         if path in ('/', ''):
             return self._handle_interface(environ, response)
+        elif path == '/playlists':
+            return self._handle_playlists(environ, response)
+        elif re.match("/playlist/.*", path) is not None:
+            return self._handle_playlist_info(environ, response, re.match("/playlist/(.*)", path).group(1))
+        elif path == '/playqueue':
+            return self._handle_playqueue_info(environ, response)
         elif path.startswith('/stock/'):
             return self._handle_stock(environ, response)
         else:
@@ -226,12 +234,23 @@ class RhythmwebServer(object):
                         if not player.get_playing_entry():
                             #log("play", "not playing")
                             if not player.get_playing_source():
-                                #log("play", "not source")
-                                if playlist_rows.get_size() > 0:
-                                    #log("play", "get size")
-                                    player.play_entry(iter(playlist_rows).next()[0],
-                                                    queue)
-                                    #player.play_entry(playlist_rows[0], queue)
+                                # no current playlist is playing.
+                                if 'playlist' in params and len(params['playlist']) > 0:
+                                    # play the playlist that was requested
+                                    playlist = params['playlist'][0]
+                                    if(playlist == 'Play Queue'):
+                                        #log("play", "not source")
+                                        if playlist_rows.get_size() > 0:
+                                            #log("play", "get size")
+                                            player.play_entry(iter(playlist_rows).next()[0],
+                                                            queue)
+                                            #player.play_entry(playlist_rows[0], queue)
+                                    else:
+                                        # get the first track in the requested playlist
+                                        selected_track = None
+                                        if 'track' in params and len(params['track']) > 0:
+                                            selected_track = params['track'][0]
+                                        self._play_track(player, shell, selected_track, playlist)
                             else:
                                 #log("play", "play")
                                 player.play()
@@ -241,7 +260,15 @@ class RhythmwebServer(object):
                     elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
                         # user wants to play a specific song in the play list
                         track = params['track'][0]
-                        self._play_track(player, shell, track)
+                        playlist = ''
+                        if 'playlist' in params and len(params['playlist']) > 0:
+                            playlist = params['playlist'][0]
+                        self._play_track(player, shell, track, playlist)
+                    elif action == 'play-playlist' and 'playlist' in params and len(params['playlist']) > 0:
+                        # user wants to play a specific playlist
+                        log('play playlist','')
+                        playlist = params['playlist'][0]
+                        self._play_playlist(player, shell, playlist)
                     elif action == 'pause':
                         player.pause()
                     elif action == 'next':
@@ -362,22 +389,125 @@ class RhythmwebServer(object):
                                       'playlist': playlist,
                                       'toggle_repeat_active': toggle_repeat_active,
                                       'toggle_shuffle_active': toggle_shuffle_active }
+                                      
+    def _handle_playlists(self, environ, response):
+        # get a list of all of the playlists
+        playlists = []
+        
+        current_playlist_name = ''
+        
+        if self.plugin.player.get_playing_source() is not None:
+            current_playlist_name = self.plugin.player.get_playing_source().props.name
+            if current_playlist_name.startswith('Play Queue'):
+                # strip the number of play queue tracks from the playlist name
+                current_playlist_name = "Play Queue"
+        else:
+            # if no playlist is playing, the current playlist should be the play queue
+            current_playlist_name = "Play Queue"
+        
+        playlist_model_entries = self.plugin.shell.props.playlist_manager.get_playlists()
+        if playlist_model_entries:
+            for playlist in playlist_model_entries:
+                playlists.append(playlist.props.name)
+    
+        # return playlists as json
+        playlist_data = {'selected': current_playlist_name, 'playlists': playlists};
+        response_headers = [('Content-type','application/json; charset=UTF-8')]
+        response('200 OK', response_headers)
+        return json.dumps(playlist_data)
+        
+    
+    def _handle_playlist_info(self, environ, response, playlist_name):
+    
+        log('getting playlist info for playlist ', playlist_name)
+    
+        playlist_candidate = self._find_playlist_by_name(playlist_name)
+        if playlist_candidate is not None:
+            playlist_rows = playlist_candidate.get_query_model()
+            
+            return self._process_tracks_to_json_response(playlist_name, playlist_rows, response)
+            
+        # if we get here, the playlist wasn't found
+        response('404 Not Found', [])
+        return json.dumps({"error": "playlist not found"})
+
+    def _handle_playqueue_info(self, environ, response):
+    
+        log('getting playqueue info', '')
+        
+        shell = self.plugin.shell
+        queue = shell.props.queue_source
+        playlist_rows = queue.props.query_model
+        
+        return self._process_tracks_to_json_response("Play Queue", playlist_rows, response)
+        
+    def _process_tracks_to_json_response(self, playlist_name, playlist_rows, response):
+        tracks = []
+            
+        for row in playlist_rows:
+            track_info = row[0]
+            track = {'id': track_info.get_string(RB.RhythmDBPropType.LOCATION),
+                    'title': track_info.get_string(RB.RhythmDBPropType.TITLE),
+                    'artist': track_info.get_string(RB.RhythmDBPropType.ARTIST),
+                    'album': track_info.get_string(RB.RhythmDBPropType.ALBUM)}
+            
+            tracks.append(track)
+          
+        playlist_data = {'name': playlist_name, 'tracks': tracks};
+        response_headers = [('Content-type','application/json; charset=UTF-8')]
+        response('200 OK', response_headers)
+        return json.dumps(playlist_data)
                               
-    def _play_track(self, player, shell, track):
+    def _play_track(self, player, shell, track, playlist):
     	source = ''
     	
-    	# find the current playing source, or select the active queue source
-        if player.get_playing_source() is not None:
-        	source = player.get_playing_source()
+    	log("playing from playlist ", playlist)
+    	if playlist == '':
+    	    # find the current playing source, or select the active queue source
+            if player.get_playing_source() is not None:
+        	   source = player.get_playing_source()
+            else:
+                source = shell.props.queue_source
         else:
-            source = shell.props.queue_source
+            # play in a specific playlist
+            source = self._find_playlist_by_name(playlist)
         
-        # find the rhythmbox database entry for the track uri
-        entry = shell.props.db.entry_lookup_by_location(track)
+        if track is not None:
+            # find the rhythmbox database entry for the track uri
+            entry = shell.props.db.entry_lookup_by_location(track)
+        else:
+            log('no specific track requested; playing from top','')
+            playlist_rows = source.get_query_model()
+            if playlist_rows.get_size() > 0:
+                log('got entries for playlist','')
+                entry = iter(playlist_rows).next()[0]
+                
         
-        # play the track on the source
-        player.play_entry(entry, source)
+        if entry is not None:
+            log('about to play entry ', entry)
+            # play the track on the source
+            player.play_entry(entry, source)
+        
+    def _find_playlist_by_name(self, playlist_name):
+        playlist_model_entries = self.plugin.shell.props.playlist_manager.get_playlists()
+        if playlist_model_entries:
+            for playlist_candidate in playlist_model_entries:
+                if playlist_candidate.props.name == playlist_name:
+                    # found the right playlist
+                    return playlist_candidate
+        
+    def _play_playlist(self, player, shell, playlist_name):
+        playlist_candidate = self._find_playlist_by_name(playlist_name)
+        if playlist_candidate is not None:
+            playlist_rows = playlist_candidate.get_query_model()
             
+            for row in playlist_rows:
+                # find the first track in this playlist
+                entry = shell.props.db.entry_lookup_by_location(row[0].get_string(RB.RhythmDBPropType.LOCATION))
+                # play the first track
+                player.play_entry(entry, playlist_candidate)
+                break
+
     def _toggle_play_order(self, player, toggle_shuffle):
         # get current play order
         current_play_order = player.props.play_order

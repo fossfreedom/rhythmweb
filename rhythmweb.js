@@ -21,6 +21,10 @@ function Rhythmweb() {
 	
 	var toggleShuffleEl;
 	var toggleRepeatEl;
+	var playlistBoxEl;
+	
+	var selectedPlaylist = '';
+	var selectedTrack = '';
 	
 	var reloadWindow = function(data) {
 		// some data has changed on the page
@@ -35,7 +39,11 @@ function Rhythmweb() {
 	};
 	
 	var play = function() {
-		post({'action':'play'}, true);
+		var params = {'action':'play', 'playlist': selectedPlaylist};
+		if(selectedTrack != '') {
+			params['track'] = selectedTrack;
+		}
+		post(params, true);
 	};
 	
 	var previousTrack = function() {
@@ -68,25 +76,68 @@ function Rhythmweb() {
 		toggleRepeatEl.toggleClass('active');
 	};
 	
+	var loadPlayQueue = function() {
+	    // ajax load of play queue
+        $.get('/playqueue',loadPlaylistData);
+	};
+	
+	var loadPlaylist = function(playlistName) {
+	    // ajax load of playlist
+        $.get('/playlist/' + playlistName,loadPlaylistData);
+	};
+	
+	var loadPlaylistData = function(playlistData) {
+	    var tableData = [];
+	    
+	    var data = playlistData['tracks'];
+	    
+	    // add each track to the playlist
+	    for(var i in data) {
+	        var item = data[i];
+            tableData.push('<tr id="' + item['id'] + '"><td>' + item['title'] + '</td><td>' + item['artist'] + '</td><td>' + item['album'] + '</td></tr>');	    
+	    }
+	
+	    // show the new playlist
+	    $('#playlist tbody').html(tableData.join(''));
+	    
+	    // set color alternation
+	    alternateTrackTableRowColors();
+	    
+	    selectedPlaylist = playlistData['name'];
+	};
+	
+	var installClickHandlers = function(elementLocator, clickFunction, doubleClickFunction) {
+	    // add click handlers to all table elements, current and future
+        var agent = navigator.userAgent.toLowerCase();
+        if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0){
+            // register double tap handler, but don't use the single tap handler as it's broken
+            if(doubleClickFunction != null) {
+                $(elementLocator).doubletap(
+                    doubleClickFunction,
+                    null,
+                    300
+                );
+            }
+            
+            // install single tap handler
+            if(clickFunction != null) {
+                $(elementLocator).live('touchend', clickFunction);
+            }
+        }
+        else {
+            // non mobile safari - use standard jquery click handlers
+            if(clickFunction != null) {
+                $(elementLocator).live('click', clickFunction);
+            }
+            if(doubleClickFunction != null) {
+                $(elementLocator).live('dblclick', doubleClickFunction);
+            }
+        }
+	
+	};
+	
 	var addTrackTableClickHandlers = function() {
-		// add click handlers to all table elements, current and future
-		var agent = navigator.userAgent.toLowerCase();
-		if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0){
-			// register double tap handler, but don't use the single tap handler as it's broken
-			$('#playlist tr').doubletap(
-			    handleTrackDoubleClicked,
-			    null,
-			    300
-			);
-			
-			// install single tap handler
-			$('#playlist tr').live('touchend', handleTrackClicked);
-		}
-		else {
-			// non mobile safari - use standard jquery click handlers
-			$('#playlist tr').live('click', handleTrackClicked);
-			$('#playlist tr').live('dblclick', handleTrackDoubleClicked);
-		}
+		installClickHandlers('#playlist tr', handleTrackClicked, handleTrackDoubleClicked);
 	};
 	
 	var handleTrackClicked = function(event) {
@@ -97,31 +148,120 @@ function Rhythmweb() {
 		
 		// select the track row
 		tr.addClass('selected');
+		
+		selectedTrack = event.currentTarget.id;
 	};
 	
+	var handlePlaylistClicked = function(event) {
+        var div = $(event.currentTarget);
+        
+        // load the playlist into the window
+        if(div.hasClass("playqueue")) {
+        	// this is the global play queue
+        	loadPlayQueue();
+        } else {
+        	loadPlaylist(div.html());
+        }
+        
+        // remove previous selection
+        $('#playlistbox .playlist_item').removeClass('selected');
+        
+        // select the track row
+        div.addClass('selected');
+        
+        // clear the selected track
+        selectedTrack = '';
+    };
+	
 	var handleTrackDoubleClicked = function(event) {
-		post({'action':'play-track','track':event.currentTarget.id}, true);
+		post({'action':'play-track','track':event.currentTarget.id,'playlist':$('#playlistbox .selected').html()}, true);
 	};
 	
 	var alternateTrackTableRowColors = function() {
 		$('#playlist tr:even').addClass('alt');
 	};
 	
+	var togglePlaylistPaneVisibility = function(){
+        $('#main').toggleClass('use-sidebar');
+        
+        var hasSidebar = $('#main').hasClass('use-sidebar') + '';
+        $.cookie("show_playlist_sidebar", hasSidebar);
+    };
+	
+	var createPlaylistListReloader = function() {
+	    // create double click handler for playlist
+	    installClickHandlers('.playlist_item', handlePlaylistClicked, playPlaylist);
+	    
+	    // create playlist list reloader
+	    // TODO - turn this on once the track list reloads via ajax
+	    //setInterval(reloadPlaylists, 30000);
+        reloadPlaylists();
+	};
+	
+	var playPlaylist = function(event) {
+	    var div = $(event.currentTarget);
+        
+        var requestedPlaylist = $(event.currentTarget).html();
+        
+        post({'action':'play-playlist', 'playlist': requestedPlaylist}, true);
+	};
+	
+	var reloadPlaylists = function() {
+	   // ajax load of playlists
+	   $.get('/playlists',displayPlaylists);
+	};
+	
+	var displayPlaylists = function(playlistData) {
+	   // display the new playlists
+	   var playlistHTMLs = [];
+	   
+	   // add play queue
+	   var playQueueEl = '<div class="playlist_item playqueue';
+	   if(playlistData['selected'] == 'Play Queue') {
+		   playQueueEl += ' selected';
+	   }
+	   playQueueEl += '"	>Play Queue</div>';
+	   
+	   
+	   playlistHTMLs.push(playQueueEl);
+	   
+	   for(var i in playlistData['playlists']) {
+	       var div = '<div class="playlist_item';
+	       if(playlistData['selected'] == playlistData['playlists'][i]) {
+	           div += ' selected';
+	       }
+	       div += '">' + playlistData['playlists'][i] + '</div>'
+	       playlistHTMLs.push(div);
+	   }
+	
+	   // reload playlist content
+	   playlistBoxEl.html(playlistHTMLs.join(""))
+	};
+	
 	var initialize = function() {
 		toggleShuffleEl = $('#toggle-shuffle');
 		toggleRepeatEl = $('#toggle-repeat');
+        playlistBoxEl = $('#playlistbox');
+        
+        var playlistViewCookie = $.cookie("show_playlist_sidebar");
+        if(playlistViewCookie != null && playlistViewCookie == "true") {
+            $('#main').addClass('use-sidebar');
+        }
 		
 		$('#play').click(play);
 		$('#previous-track').click(previousTrack);
 		$('#next-track').click(nextTrack);
 		$('#volume-up').click(volumeUp);
 		$('#volume-down').click(volumeDown);
+        $('#toggle-playlist-view').click(togglePlaylistPaneVisibility);
 		toggleShuffleEl.click(toggleShuffle);
 		toggleRepeatEl.click(toggleRepeat);
 		
 		addTrackTableClickHandlers();
 		
 		alternateTrackTableRowColors();
+		
+		createPlaylistListReloader();
 	};
 
 	initialize();
