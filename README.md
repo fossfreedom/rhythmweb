@@ -3,6 +3,8 @@ rhythmweb
 
 GTK3 port of the original rhythmweb v0.1x GTK2 plugin - for Rhythmbox v2.96 and above
 
+[![Flattr Button](http://api.flattr.com/button/button-static-50x60.png "Flattr This!")](https://flattr.com/thing/1237286/fossfreedomrhythmweb-on-GitHub "Rhythmbox RhythmWeb")
+
 Original implementation by Michael Gratton 
 Enhancements by fossfreedom and Taylor Raack
 
