@@ -34,7 +34,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
 from gi.repository import Peas
-#import gio
+from rhythmweb_prefs import Preferences
 
 import rb
 
