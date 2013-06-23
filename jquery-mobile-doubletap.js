@@ -9,17 +9,17 @@
  */
  
 (function($){
-	// Determine if we on iPhone or iPad
-	var isiOS = false;
+	// Determine if we on iPhone or iPad or Android
+	var isiOSAndroid = false;
 	var agent = navigator.userAgent.toLowerCase();
-	if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0){
-		   isiOS = true;
+	if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0 || agent.indexOf('android') >= 0){
+		   isiOSAndroid = true;
 	}
  
 	$.fn.doubletap = function(onDoubleTapCallback, onTapCallback, delay){
 		var eventName, action;
 		delay = delay == null? 500 : delay;
-		eventName = isiOS == true? 'touchend' : 'click';
+		eventName = isiOSAndroid == true? 'touchend' : 'click';
  
 		$(this).bind(eventName, function(event){
 			var now = new Date().getTime();
