@@ -109,7 +109,7 @@ function Rhythmweb() {
 	var installClickHandlers = function(elementLocator, clickFunction, doubleClickFunction) {
 	    // add click handlers to all table elements, current and future
         var agent = navigator.userAgent.toLowerCase();
-        if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0){
+        if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0 || agent.indexOf('android') >= 0){
             // register double tap handler, but don't use the single tap handler as it's broken
             if(doubleClickFunction != null) {
                 $(elementLocator).doubletap(

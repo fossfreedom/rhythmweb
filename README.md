@@ -36,7 +36,7 @@ cd rhythmweb
 
 Tested Platforms
 ----------------
-
+ - Android 4.2.2 / Google Chrome 27.0.1453.90
  - Ipod/IPad / Safari
  - Mac OS X 10.7.4 / Safari 6.0
  - Mac OS X 10.7.4 / Firefox 14.0.1
