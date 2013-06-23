@@ -49,3 +49,4 @@ Thanks
 ======
 
 1. thank-you to dinoboy197 for various fix-ups and adding toggle-buttons 
+2. thanks to https://github.com/alex116 for adding Android support
