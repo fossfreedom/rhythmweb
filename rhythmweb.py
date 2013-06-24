@@ -50,6 +50,7 @@ except:
 class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'RhythmwebPlugin'
     object = GObject.property(type=GObject.GObject)
+    port = GObject.property(type=int, default=8000)
 
     def __init__(self):
         super(RhythmwebPlugin, self).__init__()
@@ -68,8 +69,11 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
             self.db.connect ('entry-extra-metadata-notify',
                              self._extra_metadata_changed_cb)
             ,)
-        self.prefs = Preferences()
-        self.port = self.prefs.get_port() #8000
+
+        settings = Gio.Settings("org.gnome.rhythmbox.plugins.rhythmweb")
+        settings.bind('port', self,
+            'port', Gio.SettingsBindFlags.GET)
+        
         self.server = RhythmwebServer('', self.port, self)
         self._mdns_publish()
 
@@ -196,6 +200,7 @@ class RhythmwebServer(object):
 
     def _wsgi(self, environ, response):
         path = environ['PATH_INFO']
+        
         if path in ('/', ''):
             return self._handle_interface(environ, response)
         elif path == '/playlists':
@@ -231,33 +236,39 @@ class RhythmwebServer(object):
                 params = parse_post(environ)
                 if 'action' in params:
                     action = params['action'][0]
+                    log('action', action)
                     if action == 'play':
                         if not player.get_playing_entry():
-                            #log("play", "not playing")
+                            log("play", "not playing")
                             if not player.get_playing_source():
                                 # no current playlist is playing.
                                 if 'playlist' in params and len(params['playlist']) > 0:
                                     # play the playlist that was requested
                                     playlist = params['playlist'][0]
+                                    log("play", playlist)
                                     if(playlist == 'Play Queue'):
-                                        #log("play", "not source")
+                                        log("play", "play queue")
                                         if playlist_rows.get_size() > 0:
-                                            #log("play", "get size")
+                                            log("play", "get size")
                                             player.play_entry(iter(playlist_rows).next()[0],
                                                             queue)
-                                            #player.play_entry(playlist_rows[0], queue)
+                                            player.play_entry(playlist_rows[0], queue)
                                     else:
                                         # get the first track in the requested playlist
+                                        log("play", "first track")
                                         selected_track = None
                                         if 'track' in params and len(params['track']) > 0:
                                             selected_track = params['track'][0]
                                         self._play_track(player, shell, selected_track, playlist)
+                                else:
+                                    log("play", "play1")
+                                    player.playpause(True)
                             else:
-                                #log("play", "play")
-                                player.play()
+                                log("play", "play2")
+                                player.playpause(True)
                         else:
                             player.playpause(True)
-                            #log("play", "pause")
+                            log("play", "pause")
                     elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
                         # user wants to play a specific song in the play list
                         track = params['track'][0]
@@ -409,7 +420,9 @@ class RhythmwebServer(object):
         playlist_model_entries = self.plugin.shell.props.playlist_manager.get_playlists()
         if playlist_model_entries:
             for playlist in playlist_model_entries:
-                playlists.append(playlist.props.name)
+                if playlist.props.is_local and \
+                    isinstance(playlist, RB.StaticPlaylistSource):
+                    playlists.append(playlist.props.name)
     
         # return playlists as json
         playlist_data = {'selected': current_playlist_name, 'playlists': playlists};

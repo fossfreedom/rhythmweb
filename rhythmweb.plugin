@@ -6,7 +6,7 @@ Name=Rhythmweb
 Depends=rb
 Description=A web interface for Rhythmbox
 Authors=fossfreedom <foss.freedom@gmail.com>, Taylor Raack <taylor@raack.info>, Michael Gratton <mike@vee.net>
-Copyright=Copyright © 2012 fossfreedom  and Taylor Raack, Copyright © 2007 Michael Gratton 
+Copyright=Copyright © 2013 fossfreedom  © 2007 Michael Gratton 
 Website=https://github.com/fossfreedom/rhythmweb
 Help=https://github.com/fossfreedom/rhythmweb/blob/master/README.md
 

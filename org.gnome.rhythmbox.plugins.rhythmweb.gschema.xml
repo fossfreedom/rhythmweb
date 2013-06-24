@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema path="/org/gnome/rhythmbox/plugins/rhythmweb/" id="org.gnome.rhythmbox.plugins.rhythmweb">
+        <key type="i" name="port">
+            <default>8000</default>
+            <summary>TCPIP Port number.</summary>
+            <description>Defines the port number that the webserver connects to.</description>
+        </key>
+    </schema>
+</schemalist>

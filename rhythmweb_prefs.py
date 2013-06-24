@@ -38,35 +38,19 @@ class Preferences(GObject.Object, PeasGtk.Configurable):
         self.settings = Gio.Settings("org.gnome.rhythmbox.plugins.rhythmweb")
         GObject.Object.__init__(self)
 
-    def btn_apply_clicked(self, widget, instance ):
-        '''
-        Sets the preferences value to the value entered in the text field in the preferences
-        '''
-        try:
-            instance.settings['port'] = int(instance.builder.get_object('textfieldport').get_text())
-            instance.builder.get_object('restartplz').set_visible(True)
-        except:
-            print 'rhythmweb: failed to set port to value from text field'
-
     def do_create_configure_widget(self):
         '''
         Creates the plugin's preferences dialog
         '''
         # create the ui
-        self.builder = Gtk.Builder()
-        self.builder.add_from_file(rb.find_plugin_file(self, 'ui/rhythmweb_prefs.ui'))
-        #builder.connect_signals(self)
-        
-        textinput = self.builder.get_object('textfieldport')
-        textinput.set_text(str(self.settings['port']))
-        self.builder.get_object('restartplz').set_visible(False)
-        self.builder.get_object('buttonapply').connect('clicked', self.btn_apply_clicked, self )
+        builder = Gtk.Builder()
+        builder.add_from_file(rb.find_plugin_file(self, 'ui/rhythmweb_prefs.ui'))
+
+        port = builder.get_object(
+            'textfieldport')
+        self.settings.bind('port',
+            port, 'value',
+            Gio.SettingsBindFlags.DEFAULT)
+            
         # return the dialog
-        return self.builder.get_object('main_notebook')
-
-    def get_port(self):
-        '''
-        Returns the current port
-        '''
-        return self.settings['port']
-
+        return builder.get_object('main_notebook')
