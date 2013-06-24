@@ -234,77 +234,79 @@ class RhythmwebServer(object):
         if environ['REQUEST_METHOD'] == 'POST':
             try:
                 params = parse_post(environ)
-                if 'action' in params:
-                    action = params['action'][0]
-                    log('action', action)
-                    if action == 'play':
-                        if not player.get_playing_entry():
-                            log("play", "not playing")
-                            if not player.get_playing_source():
-                                # no current playlist is playing.
-                                if 'playlist' in params and len(params['playlist']) > 0:
-                                    # play the playlist that was requested
-                                    playlist = params['playlist'][0]
-                                    log("play", playlist)
-                                    if(playlist == 'Play Queue'):
-                                        log("play", "play queue")
-                                        if playlist_rows.get_size() > 0:
-                                            log("play", "get size")
-                                            player.play_entry(iter(playlist_rows).next()[0],
-                                                            queue)
-                                            player.play_entry(playlist_rows[0], queue)
-                                    else:
-                                        # get the first track in the requested playlist
-                                        log("play", "first track")
-                                        selected_track = None
-                                        if 'track' in params and len(params['track']) > 0:
-                                            selected_track = params['track'][0]
-                                        self._play_track(player, shell, selected_track, playlist)
-                                else:
-                                    log("play", "play1")
-                                    player.playpause(True)
-                            else:
-                                log("play", "play2")
-                                player.playpause(True)
-                        else:
-                            player.playpause(True)
-                            log("play", "pause")
-                    elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
-                        # user wants to play a specific song in the play list
-                        track = params['track'][0]
-                        playlist = ''
-                        if 'playlist' in params and len(params['playlist']) > 0:
-                            playlist = params['playlist'][0]
-                        self._play_track(player, shell, track, playlist)
-                    elif action == 'play-playlist' and 'playlist' in params and len(params['playlist']) > 0:
-                        # user wants to play a specific playlist
-                        log('play playlist','')
-                        playlist = params['playlist'][0]
-                        self._play_playlist(player, shell, playlist)
-                    elif action == 'pause':
-                        player.pause()
-                    elif action == 'next':
-                        player.do_next()
-                    elif action == 'prev':
-                        player.do_previous()
-                    elif action == 'stop':
-                        player.stop()
-                    elif action == 'toggle-repeat':
-                        self._toggle_play_order(player, False)
-                    elif action == 'toggle-shuffle':
-                        self._toggle_play_order(player, True)
-                    elif action == 'vol-up':
-                        (dummy, vol) = player.get_volume()
-                        player.set_volume(vol + 0.05)
-                    elif action == 'vol-down':
-                        (dummy, vol) = player.get_volume()
-                        player.set_volume(vol - 0.05)
-                    else:
-                        log("dunno1", action)
-                else:
-                    log("dunno2","no action")
+                action = params['action'][0]
             except:
-                pass
+                params = []
+                action = "unknown"
+                
+            log('action', action)
+            if action == 'play' and not player.get_playing_entry() and \
+                not player.get_playing_source():
+                    # no current playlist is playing.
+                    if 'playlist' in params and len(params['playlist']) > 0:
+                        # play the playlist that was requested
+                        playlist = params['playlist'][0]
+                        log("play", playlist)
+                        if(playlist == 'Play Queue'):
+                            log("play", "play queue")
+                            if playlist_rows.get_size() > 0:
+                                log("play", "get size")
+                                player.play_entry(iter(playlist_rows).next()[0],
+                                                queue)
+                                player.play_entry(playlist_rows[0], queue)
+                            else:
+                                log("play", "no rows in playqueue")
+                        else:
+                            # get the first track in the requested playlist
+                            log("play", "first track")
+                            selected_track = None
+                            if 'track' in params and len(params['track']) > 0:
+                                selected_track = params['track'][0]
+                            self._play_track(player, shell, selected_track, playlist)
+                    else:
+                        if playlist_rows.get_size() > 0:
+                            log("play", "get size(2)")
+                            player.play_entry(iter(playlist_rows).next()[0],
+                                            queue)
+                            player.play_entry(playlist_rows[0], queue)
+                        else:
+                            log("play", "no rows in playqueue(2)")
+                        
+            elif action == 'play':
+                player.playpause(True)
+                log("play", "pause")
+            elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
+                # user wants to play a specific song in the play list
+                track = params['track'][0]
+                playlist = ''
+                if 'playlist' in params and len(params['playlist']) > 0:
+                    playlist = params['playlist'][0]
+                self._play_track(player, shell, track, playlist)
+            elif action == 'play-playlist' and 'playlist' in params and len(params['playlist']) > 0:
+                # user wants to play a specific playlist
+                log('play playlist','')
+                playlist = params['playlist'][0]
+                self._play_playlist(player, shell, playlist)
+            elif action == 'pause':
+                player.pause()
+            elif action == 'next':
+                player.do_next()
+            elif action == 'prev':
+                player.do_previous()
+            elif action == 'stop':
+                player.stop()
+            elif action == 'toggle-repeat':
+                self._toggle_play_order(player, False)
+            elif action == 'toggle-shuffle':
+                self._toggle_play_order(player, True)
+            elif action == 'vol-up':
+                (dummy, vol) = player.get_volume()
+                player.set_volume(vol + 0.05)
+            elif action == 'vol-down':
+                (dummy, vol) = player.get_volume()
+                player.set_volume(vol - 0.05)
+            else:
+                log("dunno1", action)
                     
             #log("eviron", environ)
             #log("response", response)
@@ -509,6 +511,9 @@ class RhythmwebServer(object):
                 if playlist_candidate.props.name == playlist_name:
                     # found the right playlist
                     return playlist_candidate
+
+        #assume the queue if playlist is not found
+        return self.plugin.shell.props.queue_source
         
     def _play_playlist(self, player, shell, playlist_name):
         playlist_candidate = self._find_playlist_by_name(playlist_name)
