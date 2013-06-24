@@ -53,8 +53,8 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         super(RhythmwebPlugin, self).__init__()
-
-    def do_activate (self):
+ 
+    def do_activate(self): 
         self.shell = self.object
         self.player = self.shell.props.shell_player
         self.db = self.shell.props.db
@@ -68,7 +68,8 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
             self.db.connect ('entry-extra-metadata-notify',
                              self._extra_metadata_changed_cb)
             ,)
-        self.port = 8000
+        self.prefs = Preferences()
+        self.port = self.prefs.get_port() #8000
         self.server = RhythmwebServer('', self.port, self)
         self._mdns_publish()
 
