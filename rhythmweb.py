@@ -254,7 +254,8 @@ class RhythmwebServer(object):
                                 log("play", "get size")
                                 player.play_entry(iter(playlist_rows).next()[0],
                                                 queue)
-                                player.play_entry(playlist_rows[0], queue)
+                                #player.play_entry(playlist_rows[0], queue)
+                                responsetext = {'playing':'true'}
                             else:
                                 log("play", "no rows in playqueue")
                         else:
@@ -264,12 +265,15 @@ class RhythmwebServer(object):
                             if 'track' in params and len(params['track']) > 0:
                                 selected_track = params['track'][0]
                             self._play_track(player, shell, selected_track, playlist)
+                            responsetext = {'playing':'true'}
                     else:
                         if playlist_rows.get_size() > 0:
                             log("play", "get size(2)")
                             player.play_entry(iter(playlist_rows).next()[0],
                                             queue)
-                            player.play_entry(playlist_rows[0], queue)
+                            responsetext = {'playing':'true'}
+                            #log("play", iter(playlist_rows)[0])
+                            #player.play_entry(iter(playlist_rows)[0], queue)
                         else:
                             log("play", "no rows in playqueue(2)")
                         
@@ -389,12 +393,6 @@ class RhythmwebServer(object):
                     
                 refresh = '<meta http-equiv="refresh" content="%s">' % refresh
 
-        #log('title', title)
-        #log('refresh', refresh)
-        #log('play', play)
-        #log('playing', playing)
-        #log('playlist', playlist)
-        
         toggle_repeat_active = ''
         toggle_shuffle_active = ''
         if (player.props.play_order == 'linear-loop') or (player.props.play_order == 'random-by-age-and-rating'):
