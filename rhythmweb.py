@@ -240,6 +240,7 @@ class RhythmwebServer(object):
                 action = "unknown"
                 
             log('action', action)
+            responsetext = ''
             if action == 'play' and not player.get_playing_entry() and \
                 not player.get_playing_source():
                     # no current playlist is playing.
@@ -272,9 +273,11 @@ class RhythmwebServer(object):
                         else:
                             log("play", "no rows in playqueue(2)")
                         
-            elif action == 'play':
+            elif action == 'play': 
                 player.playpause(True)
-                log("play", "pause")
+                r, val = player.get_playing()  
+                responsetext = {'playing':val} 
+                log("play", "pause") 
             elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
                 # user wants to play a specific song in the play list
                 track = params['track'][0]
@@ -288,13 +291,15 @@ class RhythmwebServer(object):
                 playlist = params['playlist'][0]
                 self._play_playlist(player, shell, playlist)
             elif action == 'pause':
-                player.pause()
+                player.pause() 
+                responsetext = {'playing':'false'}
             elif action == 'next':
                 player.do_next()
             elif action == 'prev':
                 player.do_previous()
             elif action == 'stop':
                 player.stop()
+                responsetext = {'playing':'false'}
             elif action == 'toggle-repeat':
                 self._toggle_play_order(player, False)
             elif action == 'toggle-shuffle':
@@ -309,9 +314,14 @@ class RhythmwebServer(object):
                 log("dunno1", action)
                     
             #log("eviron", environ)
-            #log("response", response)
-            response('204 No Content', [('Content-type','text/plain')])
-            return 'OK'
+            #log("response", response) 
+            if responsetext != '':
+                response_headers = [('Content-type','application/json; charset=UTF-8')]
+                response('200 OK', response_headers)
+                return json.dumps(responsetext) 
+            else:
+                response('204 No Content', [('Content-type','text/plain')])
+                return 'OK'
 
         # generate the playing headline
         title = 'Rhythmweb'
@@ -392,6 +402,7 @@ class RhythmwebServer(object):
         if (player.props.play_order == 'shuffle') or (player.props.play_order == 'random-by-age-and-rating'):
             toggle_shuffle_active = 'class="active"'
 	
+        r, val = player.get_playing()
         # display the page
         player_html = open(resolve_path('player.html'))
         response_headers = [('Content-type','text/html; charset=UTF-8')]
@@ -402,7 +413,9 @@ class RhythmwebServer(object):
                                       'playing': playing,
                                       'playlist': playlist,
                                       'toggle_repeat_active': toggle_repeat_active,
-                                      'toggle_shuffle_active': toggle_shuffle_active }
+                                      'toggle_shuffle_active': toggle_shuffle_active,
+                                      'currentlyplaying': val 
+                                    }
                                       
     def _handle_playlists(self, environ, response):
         # get a list of all of the playlists

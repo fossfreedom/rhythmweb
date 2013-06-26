@@ -25,7 +25,7 @@ function Rhythmweb() {
 	
 	var selectedPlaylist = '';
 	var selectedTrack = '';
-	
+ 	
 	var reloadWindow = function(data) {
 		// some data has changed on the page
 		// TODO - reload the page via ajax entirely rather than rebuilding all html
@@ -34,16 +34,50 @@ function Rhythmweb() {
 		setTimeout(function() {document.location.reload();}, 200);
 	};
 	
-	var post = function(params, reload) {
-		$.post('/', params, function() { if(reload) { reloadWindow(); }});
+	var post = function(params, reload, callback) {
+		$.post('/', 
+				params, 
+				function(data, textstatus, xhr)
+				{ 	  
+					if(reload) { 
+						reloadWindow(); 
+					}
+					if(callback){
+						callback(params, reload, xhr);
+					}
+				}
+		);
 	};
+
+	function setPlaybutton(playing){
+		var playbutton = document.getElementById("play");
+		playbutton.setAttribute("isplaying", playing );
+		var img = playbutton.getElementsByTagName("img")[0];
+		if(playing) {
+			img.src="stock/gtk-media-pause"; 
+			playbutton.childNodes[2].data="Pause";
+		}
+		else {
+			img.src="stock/gtk-media-play-ltr";
+			playbutton.childNodes[2].data="Play";
+		}
+	}
 	
 	var play = function() {
-		var params = {'action':'play', 'playlist': selectedPlaylist};
+		var params = {
+			'action': document.getElementById("play").getAttribute("isplaying").toLowerCase()=="true"?"pause":"play",
+			'playlist': selectedPlaylist
+		};
+ 
 		if(selectedTrack != '') {
 			params['track'] = selectedTrack;
 		}
-		post(params, true);
+		post(params, false,
+			function(ig, nore, xhr){
+				var obj = JSON.parse(xhr.responseText || "");	
+				setPlaybutton(String(obj.playing) == "true");
+			}
+		);
 	};
 	
 	var previousTrack = function() {
@@ -262,6 +296,7 @@ function Rhythmweb() {
 		alternateTrackTableRowColors();
 		
 		createPlaylistListReloader();
+		setPlaybutton( document.getElementById("play").getAttribute("isplaying").toLowerCase() == "true");
 	};
 
 	initialize();

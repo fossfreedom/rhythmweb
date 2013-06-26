@@ -167,7 +167,7 @@ button:active {
   border-right: 2px solid ButtonHighlight;
   background: ButtonShadow;
 }
-
+ 
 button img {
   margin: 2px;
   padding: 0px;
