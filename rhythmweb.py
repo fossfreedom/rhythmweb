@@ -175,7 +175,8 @@ class RhythmwebServer(object):
         self._watch_cb_id = GObject.io_add_watch(self._httpd.socket,
                                                  GObject.IO_IN,
                                                  self._idle_cb)
-	
+        self._cover_db = RB.ExtDB(name='album-art')
+        
     def shutdown(self):
         GObject.source_remove(self._watch_cb_id)
         self.running = False
@@ -211,6 +212,8 @@ class RhythmwebServer(object):
             return self._handle_playqueue_info(environ, response)
         elif path.startswith('/stock/'):
             return self._handle_stock(environ, response)
+        elif path.startswith('/cover/'):
+            return self._handle_cover(environ, response)
         else:
             return self._handle_static(environ, response)
 
@@ -588,6 +591,33 @@ class RhythmwebServer(object):
             response_headers = [('Content-type','text/plain')]
             response('404 Not Found', response_headers)
             return 'Stock not found: %s' % stock_id
+
+    def _handle_cover(self, environ, response):
+        player = self.plugin.player
+
+        fname = None
+        if player.get_playing_source() is not None:
+            # something is playing; 
+            entry = player.get_playing_entry()
+            key = entry.create_ext_db_key(RB.RhythmDBPropType.ALBUM)
+            
+            fname = self._cover_db.lookup(key)
+            log("handle", fname)
+
+        if not fname:
+            # nothing is playing or no cover
+            fname = rb.find_plugin_file(self.plugin, 'rhythmbox-missing-artwork.svg')
+            
+        # use gio to guess at the content type based on filename
+        content_type, val = Gio.content_type_guess(filename=fname, data=None)
+
+        icon = open(fname)
+        lastmod = time.gmtime(os.path.getmtime(fname))
+        lastmod = time.strftime("%a, %d %b %Y %H:%M:%S +0000", lastmod)
+        response_headers = [('Content-type',content_type),
+                            ('Last-Modified', lastmod)]
+        response('200 OK', response_headers)
+        return icon
 
     def _handle_static(self, environ, response):
         rpath = environ['PATH_INFO']
