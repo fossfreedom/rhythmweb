@@ -34,7 +34,6 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import RB
 from gi.repository import Peas
-from rhythmweb_prefs import Preferences
 
 import rb
 
@@ -54,8 +53,8 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         super(RhythmwebPlugin, self).__init__()
- 
-    def do_activate(self): 
+
+    def do_activate(self):
         self.shell = self.object
         self.player = self.shell.props.shell_player
         self.db = self.shell.props.db
@@ -73,7 +72,7 @@ class RhythmwebPlugin(GObject.GObject, Peas.Activatable):
         settings = Gio.Settings("org.gnome.rhythmbox.plugins.rhythmweb")
         settings.bind('port', self,
             'port', Gio.SettingsBindFlags.GET)
-        
+
         self.server = RhythmwebServer('', self.port, self)
         self._mdns_publish()
 
@@ -176,7 +175,7 @@ class RhythmwebServer(object):
                                                  GObject.IO_IN,
                                                  self._idle_cb)
         self._cover_db = RB.ExtDB(name='album-art')
-        
+
     def shutdown(self):
         GObject.source_remove(self._watch_cb_id)
         self.running = False
@@ -201,7 +200,7 @@ class RhythmwebServer(object):
 
     def _wsgi(self, environ, response):
         path = environ['PATH_INFO']
-        
+
         if path in ('/', ''):
             return self._handle_interface(environ, response)
         elif path == '/playlists':
@@ -220,11 +219,9 @@ class RhythmwebServer(object):
     def _handle_interface(self, environ, response):
         player = self.plugin.player
         shell = self.plugin.shell
-        db = self.plugin.db
         queue = shell.props.queue_source
-        
         playlist_rows = []
-        
+
         if player.get_playing_source() is not None:
             # something is playing; get the track list from the play queue or the current playlists
             playlist_rows = player.get_playing_source().get_entry_view().props.model
@@ -232,7 +229,7 @@ class RhythmwebServer(object):
             # nothing is playing,
             # but there are some songs in the play queue; the track listing should show the play queue
             playlist_rows = queue.props.query_model
-        
+
         # handle any action
         if environ['REQUEST_METHOD'] == 'POST':
             try:
@@ -241,7 +238,7 @@ class RhythmwebServer(object):
             except:
                 params = []
                 action = "unknown"
-                
+
             log('action', action)
             responsetext = ''
             if action == 'play' and not player.get_playing_entry() and \
@@ -279,12 +276,12 @@ class RhythmwebServer(object):
                             #player.play_entry(iter(playlist_rows)[0], queue)
                         else:
                             log("play", "no rows in playqueue(2)")
-                        
-            elif action == 'play': 
+
+            elif action == 'play':
                 player.playpause(True)
-                r, val = player.get_playing()  
-                responsetext = {'playing':val} 
-                log("play", "pause") 
+                r, val = player.get_playing()
+                responsetext = {'playing':val}
+                log("play", "pause")
             elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
                 # user wants to play a specific song in the play list
                 track = params['track'][0]
@@ -298,7 +295,7 @@ class RhythmwebServer(object):
                 playlist = params['playlist'][0]
                 self._play_playlist(player, shell, playlist)
             elif action == 'pause':
-                player.pause() 
+                player.pause()
                 responsetext = {'playing':'false'}
             elif action == 'next':
                 player.do_next()
@@ -319,13 +316,13 @@ class RhythmwebServer(object):
                 player.set_volume(vol - 0.05)
             else:
                 log("dunno1", action)
-                    
+
             #log("eviron", environ)
-            #log("response", response) 
+            #log("response", response)
             if responsetext != '':
                 response_headers = [('Content-type','application/json; charset=UTF-8')]
                 response('200 OK', response_headers)
-                return json.dumps(responsetext) 
+                return json.dumps(responsetext)
             else:
                 response('204 No Content', [('Content-type','text/plain')])
                 return 'OK'
@@ -370,7 +367,7 @@ class RhythmwebServer(object):
                         outputstr.write(' class="selected"')
                 except:
                     pass
-                    
+
                 outputstr.write('><td>')
                 outputstr.write(entry.get_string(RB.RhythmDBPropType.TITLE))
                 outputstr.write('</td><td>')
@@ -390,10 +387,10 @@ class RhythmwebServer(object):
             if duration > 0:
                 try:
                     (refresh,another) = player.get_playing_time()
-                    refresh = duration - refresh + 2 
+                    refresh = duration - refresh + 2
                 except:
                     refresh = duration + 2
-                    
+
                 refresh = '<meta http-equiv="refresh" content="%s">' % refresh
 
         toggle_repeat_active = ''
@@ -402,7 +399,7 @@ class RhythmwebServer(object):
             toggle_repeat_active = 'class="active"'
         if (player.props.play_order == 'shuffle') or (player.props.play_order == 'random-by-age-and-rating'):
             toggle_shuffle_active = 'class="active"'
-	
+
         r, val = player.get_playing()
         # display the page
         player_html = open(resolve_path('player.html'))
@@ -415,15 +412,15 @@ class RhythmwebServer(object):
                                       'playlist': playlist,
                                       'toggle_repeat_active': toggle_repeat_active,
                                       'toggle_shuffle_active': toggle_shuffle_active,
-                                      'currentlyplaying': val 
+                                      'currentlyplaying': val
                                     }
-                                      
+
     def _handle_playlists(self, environ, response):
         # get a list of all of the playlists
         playlists = []
-        
+
         current_playlist_name = ''
-        
+
         if self.plugin.player.get_playing_source() is not None:
             current_playlist_name = self.plugin.player.get_playing_source().props.name
             if current_playlist_name.startswith('Play Queue'):
@@ -432,76 +429,76 @@ class RhythmwebServer(object):
         else:
             # if no playlist is playing, the current playlist should be the play queue
             current_playlist_name = "Play Queue"
-        
+
         playlist_model_entries = self.plugin.shell.props.playlist_manager.get_playlists()
         if playlist_model_entries:
             for playlist in playlist_model_entries:
                 if playlist.props.is_local and \
                     isinstance(playlist, RB.StaticPlaylistSource):
                     playlists.append(playlist.props.name)
-    
+
         # return playlists as json
         playlist_data = {'selected': current_playlist_name, 'playlists': playlists};
         response_headers = [('Content-type','application/json; charset=UTF-8')]
         response('200 OK', response_headers)
         return json.dumps(playlist_data)
-        
-    
+
+
     def _handle_playlist_info(self, environ, response, playlist_name):
-    
+
         log('getting playlist info for playlist ', playlist_name)
-    
+
         playlist_candidate = self._find_playlist_by_name(playlist_name)
         if playlist_candidate is not None:
             playlist_rows = playlist_candidate.get_query_model()
-            
+
             return self._process_tracks_to_json_response(playlist_name, playlist_rows, response)
-            
+
         # if we get here, the playlist wasn't found
         response('404 Not Found', [])
         return json.dumps({"error": "playlist not found"})
 
     def _handle_playqueue_info(self, environ, response):
-    
+
         log('getting playqueue info', '')
-        
+
         shell = self.plugin.shell
         queue = shell.props.queue_source
         playlist_rows = queue.props.query_model
-        
+
         return self._process_tracks_to_json_response("Play Queue", playlist_rows, response)
-        
+
     def _process_tracks_to_json_response(self, playlist_name, playlist_rows, response):
         tracks = []
-            
+
         for row in playlist_rows:
             track_info = row[0]
             track = {'id': track_info.get_string(RB.RhythmDBPropType.LOCATION),
                     'title': track_info.get_string(RB.RhythmDBPropType.TITLE),
                     'artist': track_info.get_string(RB.RhythmDBPropType.ARTIST),
                     'album': track_info.get_string(RB.RhythmDBPropType.ALBUM)}
-            
+
             tracks.append(track)
-          
+
         playlist_data = {'name': playlist_name, 'tracks': tracks};
         response_headers = [('Content-type','application/json; charset=UTF-8')]
         response('200 OK', response_headers)
         return json.dumps(playlist_data)
-                              
+
     def _play_track(self, player, shell, track, playlist):
-    	source = ''
-    	
-    	log("playing from playlist ", playlist)
-    	if playlist == '':
-    	    # find the current playing source, or select the active queue source
+        source = ''
+
+        log("playing from playlist ", playlist)
+        if playlist == '':
+            # find the current playing source, or select the active queue source
             if player.get_playing_source() is not None:
-        	   source = player.get_playing_source()
+                   source = player.get_playing_source()
             else:
                 source = shell.props.queue_source
         else:
             # play in a specific playlist
             source = self._find_playlist_by_name(playlist)
-        
+
         if track is not None:
             # find the rhythmbox database entry for the track uri
             entry = shell.props.db.entry_lookup_by_location(track)
@@ -511,13 +508,13 @@ class RhythmwebServer(object):
             if playlist_rows.get_size() > 0:
                 log('got entries for playlist','')
                 entry = iter(playlist_rows).next()[0]
-                
-        
+
+
         if entry is not None:
             log('about to play entry ', entry)
             # play the track on the source
             player.play_entry(entry, source)
-        
+
     def _find_playlist_by_name(self, playlist_name):
         playlist_model_entries = self.plugin.shell.props.playlist_manager.get_playlists()
         if playlist_model_entries:
@@ -528,12 +525,12 @@ class RhythmwebServer(object):
 
         #assume the queue if playlist is not found
         return self.plugin.shell.props.queue_source
-        
+
     def _play_playlist(self, player, shell, playlist_name):
         playlist_candidate = self._find_playlist_by_name(playlist_name)
         if playlist_candidate is not None:
             playlist_rows = playlist_candidate.get_query_model()
-            
+
             for row in playlist_rows:
                 # find the first track in this playlist
                 entry = shell.props.db.entry_lookup_by_location(row[0].get_string(RB.RhythmDBPropType.LOCATION))
@@ -544,7 +541,7 @@ class RhythmwebServer(object):
     def _toggle_play_order(self, player, toggle_shuffle):
         # get current play order
         current_play_order = player.props.play_order
-        
+
         # determine which next shuffle shall be
         if current_play_order == 'linear':
             current_play_order = 'shuffle' if toggle_shuffle == True else 'linear-loop'
@@ -554,7 +551,7 @@ class RhythmwebServer(object):
             current_play_order = 'random-by-age-and-rating' if toggle_shuffle == True else 'linear'
         else:
             current_play_order = 'linear-loop' if toggle_shuffle == True else 'shuffle'
-        
+
         # set play order state
         Gio.Settings.new('org.gnome.rhythmbox.player').set_string("play-order",current_play_order)
 
@@ -563,7 +560,7 @@ class RhythmwebServer(object):
         stock_id = path[len('/stock/'):]
 
         icons = Gtk.IconTheme.get_default()
-	
+
         iconinfo = icons.lookup_icon(stock_id, 24, 0)
         if not iconinfo:
             iconinfo = icons.lookup_icon(stock_id, 32, 0)
@@ -574,9 +571,8 @@ class RhythmwebServer(object):
 
         if iconinfo:
             fname = iconinfo.get_filename()
-            boolval = False
             # use gio to guess at the content type based on filename
-            
+
             content_type, val = Gio.content_type_guess(filename=fname, data=None)
 
             icon = open(fname)
@@ -597,17 +593,17 @@ class RhythmwebServer(object):
 
         fname = None
         if player.get_playing_source() is not None:
-            # something is playing; 
+            # something is playing;
             entry = player.get_playing_entry()
             key = entry.create_ext_db_key(RB.RhythmDBPropType.ALBUM)
-            
+
             fname = self._cover_db.lookup(key)
             log("handle", fname)
 
         if not fname:
             # nothing is playing or no cover
             fname = rb.find_plugin_file(self.plugin, 'rhythmbox-missing-artwork.svg')
-            
+
         # use gio to guess at the content type based on filename
         content_type, val = Gio.content_type_guess(filename=fname, data=None)
 
@@ -693,4 +689,3 @@ def resolve_path(path):
 
 def log(message, args):
     sys.stdout.write("log %s:[%s]\n" % (message, args))
-
