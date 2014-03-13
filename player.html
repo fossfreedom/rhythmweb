@@ -26,7 +26,6 @@
 	<head>
 	<title>%(title)s</title>
 	<link rel="stylesheet" href="site.css" type="text/css"></head>
-	%(refresh)s
 	<body>  
 		<div id="player">
 			<h1 id="window-title">Rhythmweb</h1>
@@ -47,7 +46,7 @@
             <div>
                 <table>
                     <tr>
-                        <td valign="top"><img alt="cover" width="48" height="48" src="cover/"/></td>
+                        <td valign="top"><img alt="cover" width="48" height="48" src="rhythmbox-missing-artwork.svg"/></td>
                         <td valign="middle"><p id="playing">%(playing)s</p></td>
                     </tr>
                 </table>
@@ -56,6 +55,7 @@
 			<div class="sidebar-at-left" id="main">
 				<div id="playlistbox"></div>
 				<div id="trackbox">
+					<h1 id="loading">Loading playlist</h1>
 					<table id="playlist">
 						<thead>
 						  	<tr>
@@ -64,7 +64,7 @@
 						   		<th>Album</th>
 						  	</tr>
 						</thead>
-						<tbody>%(playlist)s</tbody>
+						<tbody></tbody>
 					</table>
 				</div>
 				<div class="clearer" />
