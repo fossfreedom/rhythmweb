@@ -30,9 +30,6 @@ import socket
 from wsgiref.simple_server import WSGIRequestHandler
 from wsgiref.simple_server import make_server
 
-#import SimpleHTTPServer
-#import SocketServer
-
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GObject
@@ -192,9 +189,9 @@ class RhythmwebServer(object):
         self.stream = stream
         self.uri = uri
 
-    def _open(self, filename):
-        filename = os.path.join(os.path.dirname(__file__), filename)
-        return open(filename)
+    #def _open(self, filename):
+     #   filename = os.path.join(os.path.dirname(__file__), filename)
+      #  return open(filename)
 
     def _idle_cb(self, source, cb_condition):
         if not self.running:
@@ -253,7 +250,9 @@ class RhythmwebServer(object):
                 
             log('action', action)
             responsetext = ''
-            if action == 'play' and not player.get_playing_entry() and \
+            entry = player.get_playing_entry()
+            
+            if action == 'play' and not entry and \
                 not player.get_playing_source():
                     # no current playlist is playing.
                     if 'playlist' in params and len(params['playlist']) > 0:
@@ -311,10 +310,10 @@ class RhythmwebServer(object):
                 responsetext = {'playing':'false'}
             elif action == 'next':
                 player.do_next()
-                self.plugin._update_entry(player.get_playing_entry())
+                self.plugin._update_entry(entry)
             elif action == 'prev':
                 player.do_previous()
-                self.plugin._update_entry(player.get_playing_entry())
+                self.plugin._update_entry(entry)
             elif action == 'stop':
                 player.stop()
                 responsetext = {'playing':'false'}
@@ -330,7 +329,10 @@ class RhythmwebServer(object):
                 player.set_volume(vol - 0.05)
             else:
                 log("dunno1", action)
-                    
+            
+            if entry:
+                player.props.db.entry_unref(entry)#Due to RB docs entry should be unrefed when no longer needed
+            
             #log("eviron", environ)
             #log("response", response) 
             if responsetext != '':
@@ -463,8 +465,10 @@ class RhythmwebServer(object):
             artist = self.artist
         if self.album:
             album =  self.album
+            
+        cover = self._get_cover_name_for_playing_track()
         
-        return_data = {'title': title, 'artist': artist, 'album': album, 'stream': self.stream};
+        return_data = {'title': title, 'artist': artist, 'album': album, 'stream': self.stream, 'cover': cover};
         response_headers = [('Content-type','application/json; charset=UTF-8')]
         response('200 OK', response_headers)
         return json.dumps(return_data)
@@ -594,7 +598,10 @@ class RhythmwebServer(object):
             response_headers = [('Content-type',content_type),
                                 ('Last-Modified', lastmod)]
             response('200 OK', response_headers)
-            return icon
+            result = icon.read()
+            icon.close()
+        
+            return result
         else:
             log("icon", "none")
             response_headers = [('Content-type','text/plain')]
@@ -602,20 +609,7 @@ class RhythmwebServer(object):
             return 'Stock not found: %s' % stock_id
 
     def _handle_cover(self, environ, response):
-        player = self.plugin.player
-
-        fname = None
-        if player.get_playing_source() is not None:
-            # something is playing; 
-            entry = player.get_playing_entry()
-            key = entry.create_ext_db_key(RB.RhythmDBPropType.ALBUM)
-            
-            fname = self._cover_db.lookup(key)
-            log("handle", fname)
-
-        if not fname:
-            # nothing is playing or no cover
-            fname = rb.find_plugin_file(self.plugin, 'rhythmbox-missing-artwork.svg')
+        fname = self._get_cover_name_for_playing_track()
             
         # use gio to guess at the content type based on filename
         content_type, val = Gio.content_type_guess(filename=fname, data=None)
@@ -626,7 +620,31 @@ class RhythmwebServer(object):
         response_headers = [('Content-type',content_type),
                             ('Last-Modified', lastmod)]
         response('200 OK', response_headers)
-        return icon
+        
+        result = icon.read()
+        icon.close()
+        
+        return result
+        
+    def _get_cover_name_for_playing_track(self):
+        player = self.plugin.player
+
+        fname = None
+        if player.get_playing_source() is not None:
+            # something is playing; 
+            entry = player.get_playing_entry()
+            key = entry.create_ext_db_key(RB.RhythmDBPropType.ALBUM)
+            
+            player.props.db.entry_unref(entry)
+            
+            fname = self._cover_db.lookup(key)
+            log("handle", fname)
+
+        if not fname:
+            # nothing is playing or no cover
+            fname = 'rhythmbox-missing-artwork.svg'
+            
+        return fname
 
     def _handle_static(self, environ, response):
         rpath = environ['PATH_INFO']

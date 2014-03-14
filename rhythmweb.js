@@ -126,11 +126,15 @@ function Rhythmweb() {
 	
 	function loadPlayQueue() {
 	    // ajax load of play queue
-        $.get('/playqueue',loadPlaylistData);
+	    $('#playlist tbody').empty();
+		$('#loading').show();
+		loadPlaylistSlice(0, sliceStep);
 	}
 	
 	function loadPlaylist(playlistName) {
 	    // ajax load of playlist
+		$('#playlist tbody').empty();
+		$('#loading').show();
         $.get('/playlist/' + playlistName,loadPlaylistData);
 	}
 	
@@ -146,11 +150,11 @@ function Rhythmweb() {
 	
 	    // show the new playlist
 		$('#playlist').append('<tbody>' + tableData + '</tbody>');
-	    
-	    // set color alternation
-	    alternateTrackTableRowColors();
+	    $("#playlist tr:even").css( "background-color", "#C0C0C0" );
 	    
 	    selectedPlaylist = playlistData.name;
+		
+		$('#loading').hide();
 	}
 	
 	function installClickHandlers(elementLocator, clickFunction, doubleClickFunction) {
@@ -231,24 +235,18 @@ function Rhythmweb() {
 		handleTrackClicked(event);
 	}
 	
-	function alternateTrackTableRowColors() {
-		$('#playlist tr:even').addClass('alt');
-	}
-	
 	function togglePlaylistPaneVisibility(){
         $('#main').toggleClass('use-sidebar');
         
         var hasSidebar = $('#main').hasClass('use-sidebar') + '';
         $.cookie("show_playlist_sidebar", hasSidebar);
+
+		$('#toggle-playlist-view').toggleClass('active');
     }
 	
 	function createPlaylistListReloader() {
 	    // create double click handler for playlist
 	    installClickHandlers('.playlist_item', handlePlaylistClicked, playPlaylist);
-	    
-	    // create playlist list reloader
-	    // TODO - turn this on once the track list reloads via ajax
-	    //setInterval(reloadPlaylists, 30000);
         reloadPlaylists();
 	}
 	
@@ -300,6 +298,7 @@ function Rhythmweb() {
 				$('#playing').html('<span id="not-playing">Not playing</span>');
 				$(document).attr('title', 'Rhythmweb');
 			}
+			$("#cover").attr('src', data.cover);
 		}, 'json');
 	}
 	
@@ -309,18 +308,19 @@ function Rhythmweb() {
 	
 	function loadPlaylistSlice(start, end) {
 		services.getSlice({'start': start, 'end': end}).done(function(data) {
-			var playlist = '';
+			var playlist = '',
+				playlistTable = $('#playlist');
 			$(data.tracks).each(function (i, item) {
 				playlist += '<tr id="' + item.id + '"><td>' + item.title + '</td><td>' + item.artist + '</td><td>' + item.album + '</td></tr>';
 			});
 			
-			var playlistTable = $('#playlist');
-			
 			if (start === 0) {
+				$('#playlist tbody').empty();
 				playlistTable.append('<tbody>');
 			}
 			
 			playlistTable.append(playlist);
+			$("#playlist tr:even").css( "background-color", "#C0C0C0");
 			
 			if (data.tracks.length === sliceStep) {
 				setTimeout(loadPlaylistSlice(end, end += sliceStep), 500);
@@ -350,8 +350,6 @@ function Rhythmweb() {
 		toggleRepeatEl.click(toggleRepeat);
 		
 		addTrackTableClickHandlers();
-		
-		alternateTrackTableRowColors();
 		
 		createPlaylistListReloader();
 		setPlaybutton(playBtn.attr("isplaying").toLowerCase() === "true");
