@@ -330,8 +330,9 @@ class RhythmwebServer(object):
             else:
                 log("dunno1", action)
             
-            if entry:
-                player.props.db.entry_unref(entry)#Due to RB docs entry should be unrefed when no longer needed
+            #if entry:
+            #    player.props.db.unref(entry)#Due to RB docs entry should be unrefed when no longer needed unref(entry) - unsupported yet
+            
             
             #log("eviron", environ)
             #log("response", response) 
@@ -629,20 +630,16 @@ class RhythmwebServer(object):
     def _get_cover_name_for_playing_track(self):
         player = self.plugin.player
 
-        fname = None
+        fname = ''
         if player.get_playing_source() is not None:
             # something is playing; 
             entry = player.get_playing_entry()
             key = entry.create_ext_db_key(RB.RhythmDBPropType.ALBUM)
             
-            player.props.db.entry_unref(entry)
+            #player.props.db.unref(entry) - unsupported yet
             
             fname = self._cover_db.lookup(key)
             log("handle", fname)
-
-        if not fname:
-            # nothing is playing or no cover
-            fname = 'rhythmbox-missing-artwork.svg'
             
         return fname
 
@@ -651,7 +648,8 @@ class RhythmwebServer(object):
 
         path = rpath.replace('/', os.sep)
         path = os.path.normpath(path)
-        if path[0] == os.sep:
+
+        if path[0] == os.sep and not path.startswith(os.sep + 'home'):
             path = path[1:]
 
         path = resolve_path(path)

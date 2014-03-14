@@ -298,7 +298,12 @@ function Rhythmweb() {
 				$('#playing').html('<span id="not-playing">Not playing</span>');
 				$(document).attr('title', 'Rhythmweb');
 			}
-			$("#cover").attr('src', data.cover);
+
+			if (data.cover !== null) {
+				$("#cover").attr('src', data.cover);
+			} else {
+				$("#cover").attr('src', 'rhythmbox-missing-artwork.svg');
+			}
 		}, 'json');
 	}
 	
