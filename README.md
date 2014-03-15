@@ -1,24 +1,23 @@
 rhythmweb
 =========
 
-GTK3 port of the original rhythmweb v0.1x GTK2 plugin - for Rhythmbox v2.96 and above
+GTK3 port of the original rhythmweb v0.1x GTK2 plugin - for Rhythmbox v2.96 - v2.99.1
 
-##GTK3 Author
+
+Original implementation by Michael Gratton 
+Enhancements by Szymon Pacanowski, fossfreedom & Taylor Raack
 
  - fossfreedom <foss.freedom@gmail.com>, website - https://github.com/fossfreedom
 
 [![Flattr Button](http://api.flattr.com/button/button-compact-static-100x17.png "Flattr This!")](https://flattr.com/thing/1237286/fossfreedomrhythmweb-on-GitHub "fossfreedom")  [![paypaldonate](https://www.paypalobjects.com/en_GB/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KBV682WJ3BDGL)
 
---------------
-
-Original implementation by Michael Gratton 
-Enhancements by fossfreedom and Taylor Raack
-
 How to use:
 
 1. Extract the folder and its contents to ~/.local/share/rhythmbox/plugins
 
-If using debian `sudo apt-get install git`
+If using debian & ubuntu derivatives `sudo apt-get install git`
+
+Rhythmbox 2.96 - 2.99.1
 
 <pre>
 
@@ -50,3 +49,4 @@ Thanks
 
 1. thank-you to dinoboy197 for various fix-ups and adding toggle-buttons 
 2. thanks to https://github.com/alex116 for adding Android support
+3. thanks to Szymon Pacanowski for the major speed and other enhancements update
