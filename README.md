@@ -35,6 +35,8 @@ git clone https://github.com/fossfreedom/rhythmweb.git
 cd rhythmweb
 ./install.sh --rb3
 
+</pre>
+
 
 2. Enable the rhythmweb plugin
 
