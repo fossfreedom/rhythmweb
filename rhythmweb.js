@@ -16,136 +16,153 @@
  with this program; if not, write to the Free Software Foundation, Inc.,
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+var services = new function() {
+	var baseUrl = '/playlist/',
+		getInitial = function() {
+			return $.getJSON(baseUrl + 'initial');
+		},
+		getCurrent = function() {
+			return $.getJSON(baseUrl + 'current');
+		},
+		getSlice = function(data) {
+			return $.post(baseUrl + 'slice', data);
+		};
+		
+	return {
+		getInitial: getInitial,
+		getCurrent: getCurrent,
+		getSlice: getSlice
+	};
+}();
 
 function Rhythmweb() {
 	
-	var toggleShuffleEl;
-	var toggleRepeatEl;
-	var playlistBoxEl;
+	var toggleShuffleEl = $('#toggle-shuffle'),
+		toggleRepeatEl = $('#toggle-repeat'),
+		playlistBoxEl = $('#playlistbox'),
+		selectedPlaylist = '',
+		selectedTrack = '',
+		sliceStep = 524;
 	
-	var selectedPlaylist = '';
-	var selectedTrack = '';
- 	
-	var reloadWindow = function(data) {
-		// some data has changed on the page
-		// TODO - reload the page via ajax entirely rather than rebuilding all html
-		
-		// reload page after 200ms, to ensure that new track has started playing
-		setTimeout(function() {document.location.reload();}, 200);
-	};
-	
-	var post = function(params, reload, callback) {
+	function post(params, reload, callback) {
 		$.post('/', 
-				params, 
-				function(data, textstatus, xhr)
-				{ 	  
-					if(reload) { 
-						reloadWindow(); 
-					}
-					if(callback){
-						callback(params, reload, xhr);
-					}
+			params, 
+			function(data, textstatus, xhr) { 	  
+				if (reload) {
+					loadCurrentPlayingSong();
 				}
-		);
-	};
+				if (callback) {
+					callback(params, reload, xhr);
+				}
+			});
+	}
 
 	function setPlaybutton(playing){
-		var playbutton = document.getElementById("play");
-		playbutton.setAttribute("isplaying", playing );
-		var img = playbutton.getElementsByTagName("img")[0];
-		if(playing) {
-			img.src="stock/gtk-media-pause"; 
-			playbutton.childNodes[2].data="Pause";
+		var playbutton = $('#play'),
+			img = $('#play img');
+			
+		playbutton.attr('isplaying', playing);
+
+		if (playing) {
+			img.attr('src', 'stock/gtk-media-pause');
+			playbutton.html('Pause').prepend(img);
+			playbutton.addClass('active');
 		}
 		else {
-			img.src="stock/gtk-media-play-ltr";
-			playbutton.childNodes[2].data="Play";
+			img.attr('src', 'stock/gtk-media-play-ltr');
+			playbutton.html('Play').prepend(img);
+			playbutton.removeClass('active');
 		}
 	}
 	
-	var play = function() {
+	function play() {
 		var params = {
-			'action': document.getElementById("play").getAttribute("isplaying").toLowerCase()=="true"?"pause":"play",
+			'action': $("#play").attr("isplaying").toLowerCase() === "true" ? "pause" : "play",
 			'playlist': selectedPlaylist
 		};
  
-		if(selectedTrack != '') {
-			params['track'] = selectedTrack;
+		if (selectedTrack !== '') {
+			params.track = selectedTrack;
 		}
 		post(params, false,
 			function(ig, nore, xhr){
 				var obj = JSON.parse(xhr.responseText || "");	
-				setPlaybutton(String(obj.playing) == "true");
+				setPlaybutton(String(obj.playing).toLowerCase() === "true");
 			}
 		);
-	};
+	}
 	
-	var previousTrack = function() {
-		post({'action':'prev'}, true);
-	};
+	function previousTrack() {
+		post({'action': 'prev'}, false);
+		loadCurrentPlayingSong();
+	}
 	
-	var nextTrack = function() {
-		post({'action':'next'}, true);
-	};
+	function nextTrack() {
+		post({'action': 'next'}, false);
+		loadCurrentPlayingSong();
+	}
 	
-	var volumeUp = function() {
-		post({'action':'vol-up'});
-	};
+	function volumeUp() {
+		post({'action': 'vol-up'});
+	}
 	
-	var volumeDown = function() {
+	function volumeDown() {
 		post({'action':'vol-down'});
-	};
+	}
 	
-	var toggleShuffle = function() {
+	function toggleShuffle() {
 		post({'action':'toggle-shuffle'});
 		
 		// change active flag
 		toggleShuffleEl.toggleClass('active');
-	};
+	}
 	
-	var toggleRepeat = function() {
+	function toggleRepeat() {
 		post({'action':'toggle-repeat'});
 		
 		// change active flag
 		toggleRepeatEl.toggleClass('active');
-	};
+	}
 	
-	var loadPlayQueue = function() {
+	function loadPlayQueue() {
 	    // ajax load of play queue
-        $.get('/playqueue',loadPlaylistData);
-	};
+	    $('#playlist tbody').empty();
+		$('#loading').show();
+		loadPlaylistSlice(0, sliceStep);
+	}
 	
-	var loadPlaylist = function(playlistName) {
+	function loadPlaylist(playlistName) {
 	    // ajax load of playlist
+		$('#playlist tbody').empty();
+		$('#loading').show();
         $.get('/playlist/' + playlistName,loadPlaylistData);
-	};
+	}
 	
-	var loadPlaylistData = function(playlistData) {
-	    var tableData = [];
-	    
-	    var data = playlistData['tracks'];
+	function loadPlaylistData(playlistData) {
+	    var tableData = '',
+			data = playlistData.tracks;
 	    
 	    // add each track to the playlist
 	    for(var i in data) {
 	        var item = data[i];
-            tableData.push('<tr id="' + item['id'] + '"><td>' + item['title'] + '</td><td>' + item['artist'] + '</td><td>' + item['album'] + '</td></tr>');	    
-	    }
+			tableData += '<tr id="' + item.id + '"><td>' + item.title + '</td><td>' + item.artist + '</td><td>' + item.album + '</td></tr>';
+		}
 	
 	    // show the new playlist
-	    $('#playlist tbody').html(tableData.join(''));
+		$('#playlist').append('<tbody>' + tableData + '</tbody>');
+	    $("#playlist tr:even").css( "background-color", "#C0C0C0" );
 	    
-	    // set color alternation
-	    alternateTrackTableRowColors();
-	    
-	    selectedPlaylist = playlistData['name'];
-	};
+	    selectedPlaylist = playlistData.name;
+		
+		$('#loading').hide();
+	}
 	
-	var installClickHandlers = function(elementLocator, clickFunction, doubleClickFunction) {
+	function installClickHandlers(elementLocator, clickFunction, doubleClickFunction) {
 	    // add click handlers to all table elements, current and future
         var agent = navigator.userAgent.toLowerCase();
-        if(agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0 || agent.indexOf('android') >= 0){
+        if (agent.indexOf('iphone') >= 0 || agent.indexOf('ipad') >= 0 || agent.indexOf('android') >= 0){
             // register double tap handler, but don't use the single tap handler as it's broken
-            if(doubleClickFunction != null) {
+            if(doubleClickFunction !== null) {
                 $(elementLocator).doubletap(
                     doubleClickFunction,
                     null,
@@ -154,27 +171,25 @@ function Rhythmweb() {
             }
             
             // install single tap handler
-            if(clickFunction != null) {
+            if (clickFunction !== null) {
                 $(elementLocator).live('touchend', clickFunction);
             }
-        }
-        else {
+        } else {
             // non mobile safari - use standard jquery click handlers
-            if(clickFunction != null) {
+            if(clickFunction !== null) {
                 $(elementLocator).live('click', clickFunction);
             }
-            if(doubleClickFunction != null) {
+            if(doubleClickFunction !== null) {
                 $(elementLocator).live('dblclick', doubleClickFunction);
             }
         }
+	}
 	
-	};
-	
-	var addTrackTableClickHandlers = function() {
+	function addTrackTableClickHandlers() {
 		installClickHandlers('#playlist tr', handleTrackClicked, handleTrackDoubleClicked);
-	};
+	}
 	
-	var handleTrackClicked = function(event) {
+	function handleTrackClicked(event) {
 		var tr = $(event.currentTarget);
 		
 		// remove previous selection
@@ -184,13 +199,13 @@ function Rhythmweb() {
 		tr.addClass('selected');
 		
 		selectedTrack = event.currentTarget.id;
-	};
+	}
 	
-	var handlePlaylistClicked = function(event) {
+	function handlePlaylistClicked(event) {
         var div = $(event.currentTarget);
         
         // load the playlist into the window
-        if(div.hasClass("playqueue")) {
+        if (div.hasClass("playqueue")) {
         	// this is the global play queue
         	loadPlayQueue();
         } else {
@@ -205,84 +220,132 @@ function Rhythmweb() {
         
         // clear the selected track
         selectedTrack = '';
-    };
+    }
 	
-	var handleTrackDoubleClicked = function(event) {
-		post({'action':'play-track','track':event.currentTarget.id,'playlist':$('#playlistbox .selected').html()}, true);
-	};
+	function handleTrackDoubleClicked(event) {
+		var targ = event.currentTarget,
+			trData = $("td", $(targ)),
+			title = $(trData[0]).text();
+
+		post({'action':'play-track','track':targ.id,'playlist':$('#playlistbox .selected').html()}, false);
+		
+		$('#playing').html('<cite id="title">' + title + '</cite> by <cite id="artist">' + $(trData[1]).text() +
+			'</cite> from <cite id="album">' + $(trData[2]).text() + '</cite>' );
+		$(document).attr('title', title);
+		handleTrackClicked(event);
+	}
 	
-	var alternateTrackTableRowColors = function() {
-		$('#playlist tr:even').addClass('alt');
-	};
-	
-	var togglePlaylistPaneVisibility = function(){
+	function togglePlaylistPaneVisibility(){
         $('#main').toggleClass('use-sidebar');
         
         var hasSidebar = $('#main').hasClass('use-sidebar') + '';
         $.cookie("show_playlist_sidebar", hasSidebar);
-    };
+
+		$('#toggle-playlist-view').toggleClass('active');
+    }
 	
-	var createPlaylistListReloader = function() {
+	function createPlaylistListReloader() {
 	    // create double click handler for playlist
 	    installClickHandlers('.playlist_item', handlePlaylistClicked, playPlaylist);
-	    
-	    // create playlist list reloader
-	    // TODO - turn this on once the track list reloads via ajax
-	    //setInterval(reloadPlaylists, 30000);
         reloadPlaylists();
-	};
+	}
 	
-	var playPlaylist = function(event) {
-	    var div = $(event.currentTarget);
-        
-        var requestedPlaylist = $(event.currentTarget).html();
+	function playPlaylist(event) {
+	    var div = $(event.currentTarget),
+			requestedPlaylist = $(event.currentTarget).html();
         
         post({'action':'play-playlist', 'playlist': requestedPlaylist}, true);
-	};
+	}
 	
-	var reloadPlaylists = function() {
+	function reloadPlaylists() {
 	   // ajax load of playlists
 	   $.get('/playlists',displayPlaylists);
-	};
+	}
 	
-	var displayPlaylists = function(playlistData) {
-	   // display the new playlists
-	   var playlistHTMLs = [];
-	   
-	   // add play queue
-	   var playQueueEl = '<div class="playlist_item playqueue';
-	   if(playlistData['selected'] == 'Play Queue') {
-		   playQueueEl += ' selected';
-	   }
-	   playQueueEl += '"	>Play Queue</div>';
-	   
-	   
-	   playlistHTMLs.push(playQueueEl);
-	   
-	   for(var i in playlistData['playlists']) {
-	       var div = '<div class="playlist_item';
-	       if(playlistData['selected'] == playlistData['playlists'][i]) {
-	           div += ' selected';
-	       }
-	       div += '">' + playlistData['playlists'][i] + '</div>'
-	       playlistHTMLs.push(div);
-	   }
+	function displayPlaylists(playlistData) {
+		// display the new playlists
+		var playlistHTMLs = '',
+		// add play queue
+		playQueueEl = '<div class="playlist_item playqueue';
+		if (playlistData.selected == 'Play Queue') {
+			playQueueEl += ' selected';
+		}
+		playQueueEl += '"	>Play Queue</div>';
+
+		playlistHTMLs += playQueueEl;
+		
+		for (var i in playlistData.playlists) {
+			var div = '<div class="playlist_item';
+			if (playlistData.selected === playlistData.playlists[i]) {
+				div += ' selected';
+			}
+			div += '">' + playlistData.playlists[i] + '</div>';
+			playlistHTMLs += div;
+		}
 	
-	   // reload playlist content
-	   playlistBoxEl.html(playlistHTMLs.join(""))
-	};
+		// reload playlist content
+		playlistBoxEl.html(playlistHTMLs);
+	}
 	
-	var initialize = function() {
-		toggleShuffleEl = $('#toggle-shuffle');
-		toggleRepeatEl = $('#toggle-repeat');
-        playlistBoxEl = $('#playlistbox');
-        
-        var playlistViewCookie = $.cookie("show_playlist_sidebar");
-        if(playlistViewCookie != null && playlistViewCookie == "true") {
+	function loadCurrentPlayingSong() {
+		services.getCurrent().done(function(data) {
+			var incomingTitle = data.title;
+			if (incomingTitle !== '') {
+				$('#playing').html('<cite id="title">' + incomingTitle + '</cite> by <cite id="artist">' + data.artist + '</cite> from <cite id="album">' +
+					data.album + '</cite> <cite id="stream">' + data.stream + '</cite>' );
+				$(document).attr('title', incomingTitle);
+			} else {
+				$('#playing').html('<span id="not-playing">Not playing</span>');
+				$(document).attr('title', 'Rhythmweb');
+			}
+
+			if (data.cover !== '' && data.cover !== null) {
+				$("#cover").attr('src', data.cover);
+			} else {
+				$("#cover").attr('src', 'rhythmbox-missing-artwork.svg');
+			}
+		}, 'json');
+	}
+	
+	function loadInitialPlayList() {
+		loadPlaylistSlice(0, sliceStep);//loading in parts with prevent browser and rb from freezing for large lists
+	}
+	
+	function loadPlaylistSlice(start, end) {
+		services.getSlice({'start': start, 'end': end}).done(function(data) {
+			var playlist = '',
+				playlistTable = $('#playlist');
+			$(data.tracks).each(function (i, item) {
+				playlist += '<tr id="' + item.id + '"><td>' + item.title + '</td><td>' + item.artist + '</td><td>' + item.album + '</td></tr>';
+			});
+			
+			if (start === 0) {
+				$('#playlist tbody').empty();
+				playlistTable.append('<tbody>');
+			}
+			
+			playlistTable.append(playlist);
+			$("#playlist tr:even").css( "background-color", "#C0C0C0");
+			
+			if (data.tracks.length === sliceStep) {
+				setTimeout(loadPlaylistSlice(end, end += sliceStep), 500);
+			} else {
+				playlistTable.append('</tbody>');
+				$('#loading').hide();
+			}
+		});
+	}
+	
+	function initialize() {
+		loadInitialPlayList();
+
+        var playlistViewCookie = $.cookie("show_playlist_sidebar"),
+        	playBtn = $('#play');
+        if (playlistViewCookie !== null && playlistViewCookie === "true") {
             $('#main').addClass('use-sidebar');
         }
 		
-		$('#play').click(play);
+		playBtn.click(play);
 		$('#previous-track').click(previousTrack);
 		$('#next-track').click(nextTrack);
 		$('#volume-up').click(volumeUp);
@@ -293,16 +356,16 @@ function Rhythmweb() {
 		
 		addTrackTableClickHandlers();
 		
-		alternateTrackTableRowColors();
-		
 		createPlaylistListReloader();
-		setPlaybutton( document.getElementById("play").getAttribute("isplaying").toLowerCase() == "true");
-	};
+		setPlaybutton(playBtn.attr("isplaying").toLowerCase() === "true");
+
+		//refresh currently playing song from server every 10s (no worries it takes about 12ms)
+		setInterval(loadCurrentPlayingSong, 10000);
+	}
 
 	initialize();
 }
 
-
-$(document).ready(function() {
+$(function() {
 	new Rhythmweb();
 });

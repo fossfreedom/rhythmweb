@@ -82,15 +82,15 @@ html, body {
 }
 
 #playlist tr.alt td {
-	background: #ecf6fc;
+  background: #ecf6fc;
 }
 
 #playlist tr.over td {
-	background: #bcd4ec;
+  background: #bcd4ec;
 }
 
 #playlist tr.selected td {
-	background: ButtonFace;
+  background: ButtonFace;
 }
 
 #footer {
@@ -107,11 +107,18 @@ html, body {
   margin-top: 8px;
 }
 
+#titlePane {
+  background: white;
+}
+
+#loading {
+  text-align: center;
+}
+
 table {
   border-collapse: separate;
   border-spacing: 0px;
   padding: 1px;
-  background: ThreeDShadow;
 }
 
 table thead th {
@@ -132,7 +139,7 @@ table thead th:first-child {
 table tbody td {
   padding: 4px;
   color: ButtonText;
-  background: white;
+  font-size: small;
 }
 
 img { 
@@ -195,7 +202,6 @@ cite {
 }
 
 #trackbox {
-    background-color: #EFE;
     border-color: #CDC;
 }
  
@@ -211,5 +217,4 @@ cite {
 .clearer {
     clear: both;
 }
-
 
