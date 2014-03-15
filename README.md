@@ -1,7 +1,7 @@
 rhythmweb
 =========
 
-GTK3 port of the original rhythmweb v0.1x GTK2 plugin - for Rhythmbox v2.96 - v2.99.1
+GTK3 port of the original rhythmweb v0.1x GTK2 plugin - for Rhythmbox v2.96 and above
 
 
 Original implementation by Michael Gratton 
@@ -27,9 +27,20 @@ cd rhythmweb
 
 </pre>
 
+Rhythmbox 3.0.1 and later
+
+<pre>
+
+git clone https://github.com/fossfreedom/rhythmweb.git
+cd rhythmweb
+./install.sh --rb3
+
+
 2. Enable the rhythmweb plugin
 
 3. Launch your browser and browse to localhost:8000
+
+N.B. you can change the port number (8000) in the plugin preferences
 
 ![Imgur](http://i.imgur.com/2GiNZ.png)
 
