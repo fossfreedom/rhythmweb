@@ -299,7 +299,7 @@ function Rhythmweb() {
 				$(document).attr('title', 'Rhythmweb');
 			}
 
-			if (data.cover !== null) {
+			if (data.cover !== '' && data.cover !== null) {
 				$("#cover").attr('src', data.cover);
 			} else {
 				$("#cover").attr('src', 'rhythmbox-missing-artwork.svg');

@@ -171,6 +171,7 @@ class RhythmwebServer(object):
         self.album = None
         self.title = None
         self.stream = None
+        self.initial_playlist_rows = None
         self._httpd = make_server(hostname, port, self._wsgi)
         self._watch_cb_id = GObject.io_add_watch(self._httpd.socket,
                                                  GObject.IO_IN,
@@ -441,18 +442,18 @@ class RhythmwebServer(object):
         return json.dumps({"error": "playlist not found"})
         
     def _handle_playlist_init(self, response, environ = None):
-        player = self.plugin.player
-
-        if player.get_playing_source() is not None:
-            playlist_rows = player.get_playing_source().get_entry_view().props.model
-        else:
-            playlist_rows = player.props.source.get_entry_view().props.model
+        if self.initial_playlist_rows is None:
+            player = self.plugin.player
+            if player.get_playing_source() is not None:
+                self.initial_playlist_rows = player.get_playing_source().get_entry_view().props.model
+            else:
+                self.initial_playlist_rows = player.props.source.get_entry_view().props.model
             
         if environ is not None:
             params = parse_post(environ)
             start = int(params['start'][0])
             end = int(params['end'][0])
-            playlist_rows = list(playlist_rows)[start:end]
+            playlist_rows = list(self.initial_playlist_rows)[start:end]
             
         return self._process_tracks_to_json_response('initial', playlist_rows, response)
 
@@ -670,7 +671,9 @@ def parse_post(environ):
     if 'CONTENT_TYPE' in environ:
         length = -1
         if 'CONTENT_LENGTH' in environ:
-            length = int(environ['CONTENT_LENGTH'])
+            contLength = environ['CONTENT_LENGTH']
+            if contLength:
+                length = int(contLength)
         if environ['CONTENT_TYPE'].startswith('application/x-www-form-urlencoded'):
             return cgi.parse_qs(environ['wsgi.input'].read(length))
         if environ['CONTENT_TYPE'].startswith('multipart/form-data'):
