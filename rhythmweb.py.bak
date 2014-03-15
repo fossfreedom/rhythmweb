@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-
+import cStringIO
 import cgi
 try: import simplejson as json
 except ImportError: import json
@@ -38,22 +38,6 @@ from gi.repository import Peas
 from rhythmweb_prefs import Preferences
 
 import rb
-
-PYVER = sys.version_info[0]
-if PYVER >=3:
-    import io
-
-def bytestring(string):
-    if PYVER >= 3:
-        return string.encode()
-    else:
-        return string
-        
-def iostring(bytestr):
-    if PYVER >= 3:
-        return io.BytesIO(bytestring(bytestr))
-    else:
-        return bytestr
 
 # try to load avahi, don't complain if it fails
 try:
@@ -206,6 +190,10 @@ class RhythmwebServer(object):
         self.stream = stream
         self.uri = uri
 
+    #def _open(self, filename):
+     #   filename = os.path.join(os.path.dirname(__file__), filename)
+      #  return open(filename)
+
     def _idle_cb(self, source, cb_condition):
         if not self.running:
             return False
@@ -256,7 +244,7 @@ class RhythmwebServer(object):
         if environ['REQUEST_METHOD'] == 'POST':
             try:
                 params = parse_post(environ)
-                action = params[bytestring('action')][0]
+                action = params['action'][0]
             except:
                 params = []
                 action = "unknown"
@@ -265,14 +253,14 @@ class RhythmwebServer(object):
             responsetext = ''
             entry = player.get_playing_entry()
             
-            if action == bytestring('play') and not entry and \
+            if action == 'play' and not entry and \
                 not player.get_playing_source():
                     # no current playlist is playing.
-                    if bytestring('playlist') in params and len(params[bytestring('playlist')]) > 0:
+                    if 'playlist' in params and len(params['playlist']) > 0:
                         # play the playlist that was requested
-                        playlist = params[bytestring('playlist')][0]
+                        playlist = params['playlist'][0]
                         log("play", playlist)
-                        if(playlist == bytestring('Play Queue')):
+                        if(playlist == 'Play Queue'):
                             log("play", "play queue")
                             if playlist_rows.get_size() > 0:
                                 log("play", "get size")
@@ -286,8 +274,8 @@ class RhythmwebServer(object):
                             # get the first track in the requested playlist
                             log("play", "first track")
                             selected_track = None
-                            if bytestring('track') in params and len(params[bytestring('track')]) > 0:
-                                selected_track = params[bytestring('track')][0]
+                            if 'track' in params and len(params['track']) > 0:
+                                selected_track = params['track'][0]
                             self._play_track(player, shell, selected_track, playlist)
                             responsetext = {'playing':'true'}
                     else:
@@ -301,45 +289,43 @@ class RhythmwebServer(object):
                         else:
                             log("play", "no rows in playqueue(2)")
                         
-            elif action == bytestring('play'): 
+            elif action == 'play': 
                 player.playpause(True)
                 r, val = player.get_playing()  
                 responsetext = {'playing':val} 
                 log("play", "pause") 
-            elif action == bytestring('play-track') and \
-                bytestring('track') in params and len(params[bytestring('track')]) > 0:
+            elif action == 'play-track' and 'track' in params and len(params['track']) > 0:
                 # user wants to play a specific song in the play list
-                track = params[bytestring('track')][0]
+                track = params['track'][0]
                 playlist = ''
-                if bytestring('playlist') in params and len(params[bytestring('playlist')]) > 0:
-                    playlist = params[bytestring('playlist')][0]
+                if 'playlist' in params and len(params['playlist']) > 0:
+                    playlist = params['playlist'][0]
                 self._play_track(player, shell, track, playlist)
-            elif action == bytestring('play-playlist') and \
-                bytestring('playlist') in params and len(params[bytestring('playlist')]) > 0:
+            elif action == 'play-playlist' and 'playlist' in params and len(params['playlist']) > 0:
                 # user wants to play a specific playlist
                 log('play playlist','')
-                playlist = params[bytestring('playlist')][0]
+                playlist = params['playlist'][0]
                 self._play_playlist(player, shell, playlist)
-            elif action == bytestring('pause'):
+            elif action == 'pause':
                 player.pause() 
                 responsetext = {'playing':'false'}
-            elif action == bytestring('next'):
+            elif action == 'next':
                 player.do_next()
                 self.plugin._update_entry(entry)
-            elif action == bytestring('prev'):
+            elif action == 'prev':
                 player.do_previous()
                 self.plugin._update_entry(entry)
-            elif action == bytestring('stop'):
+            elif action == 'stop':
                 player.stop()
                 responsetext = {'playing':'false'}
-            elif action == bytestring('toggle-repeat'):
+            elif action == 'toggle-repeat':
                 self._toggle_play_order(player, False)
-            elif action == bytestring('toggle-shuffle'):
+            elif action == 'toggle-shuffle':
                 self._toggle_play_order(player, True)
-            elif action == bytestring('vol-up'):
+            elif action == 'vol-up':
                 (dummy, vol) = player.get_volume()
                 player.set_volume(vol + 0.05)
-            elif action == bytestring('vol-down'):
+            elif action == 'vol-down':
                 (dummy, vol) = player.get_volume()
                 player.set_volume(vol - 0.05)
             else:
@@ -354,11 +340,10 @@ class RhythmwebServer(object):
             if responsetext != '':
                 response_headers = [('Content-type','application/json; charset=UTF-8')]
                 response('200 OK', response_headers)
-                return iostring(json.dumps(responsetext))
+                return json.dumps(responsetext) 
             else:
-                #response('204 No Content', [('Content-type','text/plain')])
-                response('204 No Content', [])
-                return bytestring('OK')
+                response('204 No Content', [('Content-type','text/plain')])
+                return 'OK'
 
         # generate the playing headline
         title = 'Rhythmweb'
@@ -411,8 +396,7 @@ class RhythmwebServer(object):
         response('200 OK', response_headers)
         
         player_html.close()
-        
-        return iostring(result)
+        return result
                                       
     def _handle_playlists(self, environ, response):
         # get a list of all of the playlists
@@ -440,8 +424,8 @@ class RhythmwebServer(object):
         playlist_data = {'selected': current_playlist_name, 'playlists': playlists};
         response_headers = [('Content-type','application/json; charset=UTF-8')]
         response('200 OK', response_headers)
+        return json.dumps(playlist_data)
         
-        return iostring(json.dumps(playlist_data))
     
     def _handle_playlist_info(self, environ, response, playlist_name):
     
@@ -467,8 +451,8 @@ class RhythmwebServer(object):
             
         if environ is not None:
             params = parse_post(environ)
-            start = int(params[bytestring('start')][0])
-            end = int(params[bytestring('end')][0])
+            start = int(params['start'][0])
+            end = int(params['end'][0])
             playlist_rows = list(self.initial_playlist_rows)[start:end]
             
         return self._process_tracks_to_json_response('initial', playlist_rows, response)
@@ -517,7 +501,7 @@ class RhythmwebServer(object):
         response_headers = [('Content-type','application/json; charset=UTF-8')]
         response('200 OK', response_headers)
 
-        return iostring(json.dumps(playlist_data))
+        return json.dumps(playlist_data)
                               
     def _play_track(self, player, shell, track, playlist):
         source = ''
@@ -535,7 +519,7 @@ class RhythmwebServer(object):
         
         if track is not None:
             # find the rhythmbox database entry for the track uri
-            entry = shell.props.db.entry_lookup_by_id(int(track))
+            entry = shell.props.db.entry_lookup_by_id(long(track))
         else:
             log('no specific track requested; playing from top','')
             playlist_rows = source.get_query_model()
@@ -561,8 +545,6 @@ class RhythmwebServer(object):
         return self.plugin.shell.props.queue_source
         
     def _play_playlist(self, player, shell, playlist_name):
-        if PYVER >= 3:
-            playlist_name.decode('utf-8')
         playlist_candidate = self._find_playlist_by_name(playlist_name)
         if playlist_candidate is not None:
             playlist_rows = playlist_candidate.get_query_model()
@@ -612,21 +594,13 @@ class RhythmwebServer(object):
             
             content_type, val = Gio.content_type_guess(filename=fname, data=None)
 
-            if PYVER >= 3:
-                icon = open(fname, "rb")
-            else:
-                icon = open(fname)
-                
+            icon = open(fname)
             lastmod = time.gmtime(os.path.getmtime(fname))
             lastmod = time.strftime("%a, %d %b %Y %H:%M:%S +0000", lastmod)
             response_headers = [('Content-type',content_type),
                                 ('Last-Modified', lastmod)]
             response('200 OK', response_headers)
-            if PYVER >= 3:
-                result = io.BytesIO(icon.read())
-            else:
-                result = icon.read()
-                
+            result = icon.read()
             icon.close()
         
             return result
@@ -634,7 +608,7 @@ class RhythmwebServer(object):
             log("icon", "none")
             response_headers = [('Content-type','text/plain')]
             response('404 Not Found', response_headers)
-            return iostring('Stock not found: %s' % stock_id)
+            return 'Stock not found: %s' % stock_id
 
     def _handle_cover(self, environ, response):
         fname = self._get_cover_name_for_playing_track()
@@ -642,21 +616,14 @@ class RhythmwebServer(object):
         # use gio to guess at the content type based on filename
         content_type, val = Gio.content_type_guess(filename=fname, data=None)
 
-        if PYVER >= 3:
-            icon = open(fname, "rb")
-        else:
-            icon = open(fname)
-            
+        icon = open(fname)
         lastmod = time.gmtime(os.path.getmtime(fname))
         lastmod = time.strftime("%a, %d %b %Y %H:%M:%S +0000", lastmod)
         response_headers = [('Content-type',content_type),
                             ('Last-Modified', lastmod)]
         response('200 OK', response_headers)
         
-        if PYVER >= 3:
-            result = io.BytesIO(icon.read())
-        else:
-            result = icon.read()
+        result = icon.read()
         icon.close()
         
         return result
@@ -694,15 +661,11 @@ class RhythmwebServer(object):
             response_headers = [('Content-type','text/css'),
                                 ('Last-Modified', lastmod)]
             response('200 OK', response_headers)
-            
-            if PYVER >= 3:
-                return open(path, "rb")
-            else:
-                return open(path)
+            return open(path)
         else:
             response_headers = [('Content-type','text/plain')]
             response('404 Not Found', response_headers)
-            return iostring('File not found: %s' % rpath)
+            return 'File not found: %s' % rpath
 
 def parse_post(environ):
     if 'CONTENT_TYPE' in environ:
@@ -740,7 +703,7 @@ def return_redirect(path, environ, response):
     response(status, response_headers)
 
     #log("response", response)
-    return [ bytestring('Redirecting...') ]
+    return [ 'Redirecting...' ]
 
 def resolve_path(path):
     return os.path.join(os.path.dirname(__file__), path)
