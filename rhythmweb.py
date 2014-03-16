@@ -222,7 +222,7 @@ class RhythmwebServer(object):
             log("interface", response)
             return self._handle_interface(environ, response)
         elif path == '/playlists':
-            log("interface", playlists)
+            log("interface", response)
             return self._handle_playlists(environ, response)
         elif path ==  '/playlist/initial':
             log("initial", response)
