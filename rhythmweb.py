@@ -44,12 +44,14 @@ if PYVER >=3:
     import io
 
 def bytestring(string):
+    log("bytestring", string)
     if PYVER >= 3:
         return string.encode()
     else:
         return string
         
 def iostring(bytestr):
+    log("iostring", bytestr)
     if PYVER >= 3:
         return io.BytesIO(bytestring(bytestr))
     else:
@@ -215,23 +217,33 @@ class RhythmwebServer(object):
     def _wsgi(self, environ, response):
         path = environ['PATH_INFO']
         
+        log("wsgi", path)
         if path in ('/', ''):
+            log("interface", response)
             return self._handle_interface(environ, response)
         elif path == '/playlists':
+            log("interface", playlists)
             return self._handle_playlists(environ, response)
         elif path ==  '/playlist/initial':
+            log("initial", response)
             return self._handle_playlist_init(response)
         elif path ==  '/playlist/slice':
+            log("slice", response)
             return self._handle_playlist_init(response, environ)
         elif path == '/playlist/current':
+            log("current", response)
             return self._handle_current(response)
         elif re.match("/playlist/.*", path) is not None:
+            log("playlistinfo", response)
             return self._handle_playlist_info(environ, response, re.match("/playlist/(.*)", path).group(1))
         elif path == '/playqueue':
+            log("playqueue", response)
             return self._handle_playqueue_info(environ, response)
         elif path.startswith('/stock/'):
+            log("stock", response)
             return self._handle_stock(environ, response)
         elif path.startswith('/cover/'):
+            log("cover", response)
             return self._handle_cover(environ, response)
         else:
             return self._handle_static(environ, response)
@@ -345,12 +357,8 @@ class RhythmwebServer(object):
             else:
                 log("dunno1", action)
             
-            #if entry:
-            #    player.props.db.unref(entry)#Due to RB docs entry should be unrefed when no longer needed unref(entry) - unsupported yet
-            
-            
-            #log("eviron", environ)
-            #log("response", response) 
+            log("environ", environ)
+            log("response", response) 
             if responsetext != '':
                 response_headers = [('Content-type','application/json; charset=UTF-8')]
                 response('200 OK', response_headers)
@@ -489,7 +497,7 @@ class RhythmwebServer(object):
         return_data = {'title': title, 'artist': artist, 'album': album, 'stream': self.stream, 'cover': cover};
         response_headers = [('Content-type','application/json; charset=UTF-8')]
         response('200 OK', response_headers)
-        return json.dumps(return_data)
+        return iostring(json.dumps(return_data))
     
     def _handle_playqueue_info(self, environ, response):
     
@@ -746,4 +754,6 @@ def resolve_path(path):
     return os.path.join(os.path.dirname(__file__), path)
 
 def log(message, args):
-    sys.stdout.write("log %s:[%s]\n" % (message, args))
+    # when debugging incomment the following line
+    #sys.stdout.write("log %s:[%s]\n" % (message, args))
+    return
